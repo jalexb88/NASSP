@@ -1475,6 +1475,12 @@ void SaturnV::SeparateStage (int new_stage)
 		GetStatusEx(&vs3);
 		StageS.play();
 
+		// Delete connection to ML
+		if (dockml) {
+			DelDock(dockml);
+			dockml = NULL;
+		}
+
 		if (vs3.status == 1) {
 			vs3.vrot.x = 102.5;
 

@@ -4162,6 +4162,9 @@ protected:
 	Sound HatchOpenSound;
 	Sound HatchCloseSound;
 
+	//
+	DOCKHANDLE dockml;
+
 	///
 	/// Drogue deployment message.
 	///

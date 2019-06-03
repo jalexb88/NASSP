@@ -134,6 +134,12 @@ ML::ML(OBJHANDLE hObj, int fmodel) : VESSEL2 (hObj, fmodel) {
 	liftoffStreamLevel = 0;
 
 	soundlib.InitSoundLib(hObj, SOUND_DIRECTORY);
+
+	// Docking port used to connect to vehicle (0)
+	VECTOR3 dockpos = { 0,-54.73,-9.22 };
+	VECTOR3 dockdir = { 0,1,0 };
+	VECTOR3 dockrot = { -1,0,0 };
+	dockveh = CreateDock(dockpos, dockdir, dockrot);
 }
 
 ML::~ML() {
@@ -141,7 +147,7 @@ ML::~ML() {
 
 void ML::clbkSetClassCaps(FILEHANDLE cfg) {
 
-	SetEmptyMass(100000);
+	SetEmptyMass(7E7);
 	SetSize(120);
 
     ClearMeshes();
@@ -169,6 +175,12 @@ void ML::clbkPostCreation() {
 	SetAnimation(s1cforwardarmAnim, s1cforwardarmProc);
 	SetAnimation(swingarmAnim, swingarmProc);
 	SetAnimation(mastAnim, mastProc);
+
+	// Delete ML docking port if liftoff already occured
+	if (dockveh && !DockingStatus(0)) {
+		DelDock(dockveh);
+		dockveh = NULL;
+	}
 }
 
 void ML::clbkPreStep(double simt, double simdt, double mjd) {
@@ -177,6 +189,12 @@ void ML::clbkPreStep(double simt, double simdt, double mjd) {
 	ATTACHMENTHANDLE ah;
 
 	if (!firstTimestepDone) DoFirstTimestep();
+
+	// Check for abort/liftoff and if so, delete docking port
+	if (dockveh && !DockingStatus(0)) {
+		DelDock(dockveh);
+		dockveh = NULL;
+	}
 	
 	switch (state) {
 	case STATE_VABBUILD:
@@ -391,6 +409,8 @@ void ML::clbkPreStep(double simt, double simdt, double mjd) {
 		break;
 	
 	case STATE_LIFTOFF:
+		// Release vehicle
+		if (dockveh) Undock(0);
 		// Move swingarms
 		if (swingarmProc < 1) {
 			swingarmProc = min(1.0, swingarmProc + simdt / 5.0);
@@ -622,10 +642,34 @@ double ML::GetDistanceTo(double lon, double lat) {
 
 void ML::SetTouchdownPointHeight(double height) {
 
-	touchdownPointHeight = height;
-	SetTouchdownPoints(_V(  0, touchdownPointHeight,  10), 
-					   _V(-10, touchdownPointHeight, -10), 
-					   _V( 10, touchdownPointHeight, -10));
+	touchdownPointHeight = height - 0.4;
+
+	double Mass = 7E7;
+	double ro = 30;
+	TOUCHDOWNVTX td[4];
+	double x_target = -0.5;
+	double stiffness = (-1)*(Mass*9.80655) / (3 * x_target);
+	double damping = 0.9*(2 * sqrt(Mass*stiffness));
+	for (int i = 0; i < 4; i++) {
+		td[i].damping = damping;
+		td[i].mu = 3;
+		td[i].mu_lng = 3;
+		td[i].stiffness = stiffness;
+	}
+	td[0].pos.x = 0;
+	td[0].pos.y = touchdownPointHeight;
+	td[0].pos.z = 1 * ro;
+	td[1].pos.x = -cos(30 * RAD)*ro;
+	td[1].pos.y = touchdownPointHeight;
+	td[1].pos.z = -sin(30 * RAD)*ro;
+	td[2].pos.x = cos(30 * RAD)*ro;
+	td[2].pos.y = touchdownPointHeight;
+	td[2].pos.z = -sin(30 * RAD)*ro;
+	td[3].pos.x = 0;
+	td[3].pos.y = touchdownPointHeight + 110;
+	td[3].pos.z = 0;
+
+	SetTouchdownPoints(td, 4);
 }
 
 void ML::DefineAnimations() {

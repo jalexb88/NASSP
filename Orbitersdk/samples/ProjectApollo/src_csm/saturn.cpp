@@ -315,6 +315,21 @@ Saturn::Saturn(OBJHANDLE hObj, int fmodel) : ProjectApolloConnectorVessel (hObj,
 	RegisterConnector(VIRTUAL_CONNECTOR_PORT, &cdi);
 	RegisterConnector(0, &CSMToLEMConnector);
 	RegisterConnector(0, &lemECSConnector);
+
+	// Switch to compatible dock mode
+	SetDockMode(0);
+
+	// Docking port (0)
+	VECTOR3 dockpos = { 0,0,3.60 };
+	VECTOR3 dockdir = { 0,0,1 };
+	VECTOR3 dockrot = { 0,1,0 };
+	SetDockParams(dockpos, dockdir, dockrot);
+
+	// Docking port used for ML connection (1)
+	dockpos = { 0,0,-50 };
+	dockdir = { 0,0,-1 };
+	dockrot = { 0,-1,0 };
+	dockml = CreateDock(dockpos, dockdir, dockrot);
 }
 
 Saturn::~Saturn()
@@ -922,9 +937,6 @@ void Saturn::initSaturn()
 
 		// "dummy" SetSwitches to enable the panel event handling
 		SetSwitches(PanelId);
-
-		// Switch to compatible dock mode 
-		SetDockMode(0);
 	}
 	InitSaturnCalled = true;
 }
@@ -959,6 +971,12 @@ void Saturn::clbkPostCreation() {
 				|| !_strnicmp(pVessel->GetClassName(), "ProjectApollo/MCC", 17)) pMCC = static_cast<MCC*>(pVessel);
 		}
 		else pMCC = NULL;
+	}
+
+	// Delete ML docking port if already launched/aborted
+	if (dockml && !DockingStatus(1)) {
+		DelDock(dockml);
+		dockml = NULL;
 	}
 }
 
@@ -1191,6 +1209,12 @@ void Saturn::clbkPreStep(double simt, double simdt, double mjd)
 
 	sprintf(buffer, "End time(0) %lld", time(0)); 
 	TRACE(buffer);
+
+	// Delete ML docking port at liftoff
+	if (dockml && !DockingStatus(1)){
+		DelDock(dockml);
+		dockml = NULL;
+	}
 }
 
 void Saturn::clbkPostStep (double simt, double simdt, double mjd)

@@ -73,6 +73,7 @@ protected:
 	double s1cforwardarmProc;
 	double swingarmProc;
 	double mastProc;
+	DOCKHANDLE dockveh;
 
 	PSTREAM_HANDLE liftoffStream[2];
 	double liftoffStreamLevel;
