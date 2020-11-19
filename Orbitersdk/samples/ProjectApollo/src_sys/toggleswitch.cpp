@@ -377,11 +377,12 @@ bool TwoPositionSwitch::DoCheckMouseClickVC(int event, VECTOR3 &p)
 	//
 
 	if (event & PANEL_MOUSE_LBDOWN) {
-		if (state != TOGGLESWITCH_DOWN) {
-			SwitchTo(TOGGLESWITCH_DOWN, true);
-			Sclick.play();
+		if ((!Sideways && p.y > 0.5) || (Sideways && p.x < 0.5)) {
+			if (state != TOGGLESWITCH_DOWN) {
+				SwitchTo(TOGGLESWITCH_DOWN, true);
+				Sclick.play();
+			}
 		}
-
 		else {
 			if (state != TOGGLESWITCH_UP) {
 				SwitchTo(TOGGLESWITCH_UP, true);
@@ -613,30 +614,21 @@ bool ThreePosSwitch::CheckMouseClickVC(int event, VECTOR3 &p)
 	// Yes, so now we just need to check whether it's an on or
 	// off click.
 	//
+
 	if (event & PANEL_MOUSE_LBDOWN) {
-		if (Sideways == 0 || Sideways == 2 ) {
-			if (state < 2) {
-				SwitchTo(state + 1, true);
-				Sclick.play();
-			}
-		} else {
+		if ((Sideways == 0 && p.y > 0.5) || (Sideways == 1 && p.x < 0.5) || (Sideways == 2 && p.x > 0.5)) {
 			if (state > 0) {
 				SwitchTo(state - 1, true);
 				Sclick.play();
 			}
 		}
-	} else if (event & PANEL_MOUSE_RBDOWN) {
-		if (Sideways == 1) {
+		else {
 			if (state < 2) {
 				SwitchTo(state + 1, true);
 				Sclick.play();
 			}
-		} else {
-			if (state > 0) {
-				SwitchTo(state - 1, true);
-				Sclick.play();
-			}
 		}
+
 	}
 
 	else if (IsSpringLoaded() && ((event & (PANEL_MOUSE_LBUP | PANEL_MOUSE_RBUP)) != 0) && !IsHeld()) {
@@ -2290,7 +2282,7 @@ bool GuardedThreePosSwitch::CheckMouseClick(int event, int mx, int my) {
 
 bool GuardedThreePosSwitch::CheckMouseClickVC(int event, VECTOR3 &p) {
 
-	if (event & PANEL_MOUSE_RBDOWN && p.x > 0.004) {
+	if (event & PANEL_MOUSE_RBDOWN) {
 
 		if (guardState) {
 			Guard();

@@ -640,11 +640,18 @@ void LEM::RegisterActiveAreas()
 	SURFHANDLE MainPanelTex1 = oapiGetTextureHandle(hLMVC, 2);
 	SURFHANDLE MainPanelTex2 = oapiGetTextureHandle(hLMVC, 8);
 
+	double s = 0.008; // switch clickspot size
+	VECTOR3 UL = { -s, s*cos(P1_TILT), s*sin(P1_TILT) };
+	VECTOR3 UR = { s, s*cos(P1_TILT), s*sin(P1_TILT) };
+	VECTOR3 LL = { -s, s*-cos(P1_TILT), s*-sin(P1_TILT) };
+	VECTOR3 LR = { s, s*-cos(P1_TILT), s*-sin(P1_TILT) };
+
 	// Panel 1
 	for (i = 0; i < P1_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P1_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
 		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P1_01 + i, P1_TOGGLE_POS[i] + P1_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P1_01 + i, P1_TOGGLE_POS[i] + UL + P1_CLICK + ofs, P1_TOGGLE_POS[i] + UR + P1_CLICK + ofs, P1_TOGGLE_POS[i] + LL + P1_CLICK + ofs, P1_TOGGLE_POS[i] + LR + P1_CLICK + ofs);
 	}
 
 	for (i = 0; i < P1_ROTCOUNT; i++)
@@ -680,7 +687,7 @@ void LEM::RegisterActiveAreas()
 	for (i = 0; i < P2_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P2_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
-		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P2_01 + i, P2_TOGGLE_POS[i] + P2_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P2_01 + i, P2_TOGGLE_POS[i] + UL + P2_CLICK + ofs, P2_TOGGLE_POS[i] + UR + P2_CLICK + ofs, P2_TOGGLE_POS[i] + LL + P2_CLICK + ofs, P2_TOGGLE_POS[i] + LR + P2_CLICK + ofs);
 	}
 
 	for (i = 0; i < P2_ROTCOUNT; i++)
@@ -703,10 +710,16 @@ void LEM::RegisterActiveAreas()
 	oapiVCRegisterArea(AID_VC_XPOINTERLMP, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_IGNORE);
 	oapiVCRegisterArea(AID_VC_FDAI_RIGHT, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_IGNORE);
 
+	// Panel 3
+	UL = { -s, s*cos(P3_TILT), s*sin(P3_TILT) };
+	UR = { s, s*cos(P3_TILT), s*sin(P3_TILT) };
+	LL = { -s, s*-cos(P3_TILT), s*-sin(P3_TILT) };
+	LR = { s, s*-cos(P3_TILT), s*-sin(P3_TILT) };
+
 	for (i = 0; i < P3_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P3_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
-		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P3_01 + i, P3_TOGGLE_POS[i] + P3_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P3_01 + i, P3_TOGGLE_POS[i] + UL + P3_CLICK + ofs, P3_TOGGLE_POS[i] + UR + P3_CLICK + ofs, P3_TOGGLE_POS[i] + LL + P3_CLICK + ofs, P3_TOGGLE_POS[i] + LR + P3_CLICK + ofs);
 	}
 
 	for (i = 0; i < P3_ROTCOUNT; i++)
@@ -721,6 +734,11 @@ void LEM::RegisterActiveAreas()
 	oapiVCSetAreaClickmode_Quadrilateral(AID_VC_RR_SLEW_SWITCH, _V(-0.27271, 0.157539, 1.57055) + ofs, _V(-0.255647, 0.157539, 1.57055) + ofs, _V(-0.27271, 0.143561, 1.56076) + ofs, _V(-0.255647, 0.143561, 1.56076) + ofs);
 
 	// Panel 4
+	UL = { -s, s*cos(P4_TILT), s*sin(P4_TILT) };
+	UR = { s, s*cos(P4_TILT), s*sin(P4_TILT) };
+	LL = { -s, s*-cos(P4_TILT), s*-sin(P4_TILT) };
+	LR = { s, s*-cos(P4_TILT), s*-sin(P4_TILT) };
+
 	for (i = 0; i < P4_PUSHBCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_PUSHB_P4_01 + i, PANEL_REDRAW_NEVER, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
@@ -730,18 +748,22 @@ void LEM::RegisterActiveAreas()
 	for (i = 0; i < P4_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P4_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
-		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P4_01 + i, P4_TOGGLE_POS[i] + P4_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P4_01 + i, P4_TOGGLE_POS[i] + UL + P4_CLICK + ofs, P4_TOGGLE_POS[i] + UR + P4_CLICK + ofs, P4_TOGGLE_POS[i] + LL + P4_CLICK + ofs, P4_TOGGLE_POS[i] + LR + P4_CLICK + ofs);
 	}
 
 	oapiVCRegisterArea(AID_VC_DSKY_DISPLAY, _R(309, 1520, 414, 1696), PANEL_REDRAW_ALWAYS, PANEL_MOUSE_IGNORE, PANEL_MAP_BACKGROUND, MainPanelTex1);
 	oapiVCRegisterArea(AID_VC_DSKY_LIGHTS,  _R(165, 1525, 267, 1694), PANEL_REDRAW_ALWAYS, PANEL_MOUSE_IGNORE, PANEL_MAP_BACKGROUND, MainPanelTex1);
 
 	// Panel 5
+	UL = { -s, s*cos(P5_TILT), s*sin(P5_TILT) };
+	UR = { s, s*cos(P5_TILT), s*sin(P5_TILT) };
+	LL = { -s, s*-cos(P5_TILT), s*-sin(P5_TILT) };
+	LR = { s, s*-cos(P5_TILT), s*-sin(P5_TILT) };
 
 	for (i = 0; i < P5_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P5_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
-		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P5_01 + i, P5_TOGGLE_POS[i] + P5_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P5_01 + i, P5_TOGGLE_POS[i] + UL + P5_CLICK + ofs, P5_TOGGLE_POS[i] + UR + P5_CLICK + ofs, P5_TOGGLE_POS[i] + LL + P5_CLICK + ofs, P5_TOGGLE_POS[i] + LR + P5_CLICK + ofs);
 	}
 
 	for (i = 0; i < P5_ROTCOUNT; i++)
@@ -768,7 +790,7 @@ void LEM::RegisterActiveAreas()
 	for (i = 0; i < P6_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P6_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
-		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P6_01 + i, P6_TOGGLE_POS[i] + P6_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P6_01 + i, P6_TOGGLE_POS[i] + UL + P6_CLICK + ofs, P6_TOGGLE_POS[i] + UR + P6_CLICK + ofs, P6_TOGGLE_POS[i] + LL + P6_CLICK + ofs, P6_TOGGLE_POS[i] + LR + P6_CLICK + ofs);
 	}
 
 	oapiVCRegisterArea(AID_VC_STOP_BUTTON_LMP, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
@@ -779,11 +801,15 @@ void LEM::RegisterActiveAreas()
 	oapiVCRegisterArea(AID_VC_LM_DEDA_LIGHTS, _R(1740, 96, 1787, 122), PANEL_REDRAW_ALWAYS, PANEL_MOUSE_IGNORE, PANEL_MAP_BACKGROUND, MainPanelTex1);
 
 	// Panel 8
+	UL = { s*cos(P8_TILT), s*sin(P8_TILT), -s };
+	UR = { s*cos(P8_TILT), s*sin(P8_TILT), s };
+	LL = { s*-cos(P8_TILT), s*-sin(P8_TILT), -s };
+	LR = { s*-cos(P8_TILT), s*-sin(P8_TILT), s };
 
 	for (i = 0; i < P8_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P8_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
-		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P8_01 + i, P8_TOGGLE_POS[i] + P8_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P8_01 + i, P8_TOGGLE_POS[i] + UL + P8_CLICK + ofs, P8_TOGGLE_POS[i] + UR + P8_CLICK + ofs, P8_TOGGLE_POS[i] + LL + P8_CLICK + ofs, P8_TOGGLE_POS[i] + LR + P8_CLICK + ofs);
 	}
 
 	for (i = 0; i < P8_TWCOUNT; i++)
@@ -831,11 +857,15 @@ void LEM::RegisterActiveAreas()
 	}
 
 	// Panel 12
+	UL = { s*cos(P12_TILT), s*sin(P12_TILT), s };
+	UR = { s*cos(P12_TILT), s*sin(P12_TILT), -s };
+	LL = { s*-cos(P12_TILT), s*-sin(P12_TILT), s };
+	LR = { s*-cos(P12_TILT), s*-sin(P12_TILT), -s };
 
 	for (i = 0; i < P12_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P12_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
-		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P12_01 + i, P12_TOGGLE_POS[i] + P12_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P12_01 + i, P12_TOGGLE_POS[i] + UL + P12_CLICK + ofs, P12_TOGGLE_POS[i] + UR + P12_CLICK + ofs, P12_TOGGLE_POS[i] + LL + P12_CLICK + ofs, P12_TOGGLE_POS[i] + LR + P12_CLICK + ofs);
 	}
 
 	for (i = 0; i < P12_ROTCOUNT; i++)
@@ -853,11 +883,15 @@ void LEM::RegisterActiveAreas()
 	//oapiVCRegisterArea(AID_VC_RECORDER_TALKBACK, _R(806, 1460, 829, 1483), PANEL_REDRAW_ALWAYS, PANEL_MOUSE_IGNORE, PANEL_MAP_BACKGROUND, MainPanelTex2);
 
 	// Panel 14
+	UL = { s*cos(P14_TILT), s*sin(P14_TILT), s };
+	UR = { s*cos(P14_TILT), s*sin(P14_TILT), -s };
+	LL = { s*-cos(P14_TILT), s*-sin(P14_TILT), s };
+	LR = { s*-cos(P14_TILT), s*-sin(P14_TILT), -s };
 
 	for (i = 0; i < P14_SWITCHCOUNT; i++)
 	{
 		oapiVCRegisterArea(AID_VC_SWITCH_P14_01 + i, PANEL_REDRAW_ALWAYS, PANEL_MOUSE_DOWN | PANEL_MOUSE_UP);
-		oapiVCSetAreaClickmode_Spherical(AID_VC_SWITCH_P14_01 + i, P14_TOGGLE_POS[i] + P14_CLICK + ofs, 0.006);
+		oapiVCSetAreaClickmode_Quadrilateral(AID_VC_SWITCH_P14_01 + i, P14_TOGGLE_POS[i] + UL + P14_CLICK + ofs, P14_TOGGLE_POS[i] + UR + P14_CLICK + ofs, P14_TOGGLE_POS[i] + LL + P14_CLICK + ofs, P14_TOGGLE_POS[i] + LR + P14_CLICK + ofs);
 	}
 
 	for (i = 0; i < P14_ROTCOUNT; i++)
