@@ -43,6 +43,13 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 	//Hardcoded for now, better solution at some point...
 	double t_land = OrbMech::HHMMSSToSS(82.0, 8.0, 26.0);
 
+	//Temporary solution for dealing with late launches, 2nd opportunity TLI (Ref: Rev. 1 to the Apollo 8 Spacecraft Operational Trajectory Vol. 2 Summary of transearth trajectory data for Dec 1968 launch window)
+	double latereturn = 0.0;
+	if (mcc->mcclaunchazi > 106.0 && calcParams.TLI > OrbMech::HHMMSSToSS(3.0, 0.0, 0.0))
+	{
+		latereturn = 24 * 3600.0;
+	}
+
 	switch (fcn) {
 	case 1: //MISSION INITIALIZATION GROUND LIFTOFF TIME UPDATE
 	{
@@ -94,6 +101,9 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 		EMSGSUPP(1, 1);
 		//Make telemetry matrix current
 		GMGMED("G00,CSM,TLM,CSM,CUR;");
+
+		//Make MCC know the launch azimuth
+		mcc->mcclaunchazi = Azi;
 	}
 	break;
 	case 2: //TLI SIMULATION
@@ -170,13 +180,13 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 		{
 			TLIplus = 90.0*60.0;
 			entopt.lng = -30.0*RAD;
-			entopt.t_Z = 17.0*3600.0 + 47.0*60.0;
+			entopt.t_Z = 17.0*3600.0 + 47.0*60.0 + latereturn;
 		}
 		else
 		{
 			TLIplus = 4.0*3600.0;
 			entopt.lng = -165.0 * RAD;
-			entopt.t_Z = 26.0*3600.0 + 43.0*60.0;
+			entopt.t_Z = 26.0*3600.0 + 43.0*60.0 + latereturn;
 		}
 
 		sv1.mass = PZMPTCSM.mantable[0].CommonBlock.CSMMass;
@@ -304,25 +314,25 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 		{
 			TLIplus = calcParams.TLI + 11.0*3600.0;
 			sprintf(manname, "TLI+11");
-			entopt.t_Z = OrbMech::HHMMSSToSS(50.0, 4.0, 0.0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(50.0, 4.0, 0.0) + latereturn;
 		}
 		else if (fcn == 11)
 		{
 			TLIplus = calcParams.TLI + 25.0*3600.0;
 			sprintf(manname, "TLI+25");
-			entopt.t_Z = OrbMech::HHMMSSToSS(74.0, 38.0, 0.0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(74.0, 38.0, 0.0) + latereturn;
 		}
 		else if (fcn == 12)
 		{
 			TLIplus = calcParams.TLI + 35.0*3600.0;
 			sprintf(manname, "TLI+35");
-			entopt.t_Z = OrbMech::HHMMSSToSS(98.0, 12.0, 0.0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(98.0, 12.0, 0.0) + latereturn;
 		}
 		else if (fcn == 13)
 		{
 			TLIplus = calcParams.TLI + 44.0*3600.0;
 			sprintf(manname, "TLI+44");
-			entopt.t_Z = OrbMech::HHMMSSToSS(98.0, 12.0, 0.0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(98.0, 12.0, 0.0) + latereturn;
 		}
 
 		GETbase = CalcGETBase();
@@ -889,14 +899,14 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 		if (fcn == 50)
 		{
 			sprintf(manname, "TEI-1");
-			entopt.t_zmin = 122.0*3600.0;
+			entopt.t_zmin = 122.0*3600.0 + latereturn;
 		}
 		else
 		{
 			sprintf(manname, "TEI-2");
-			entopt.t_zmin = 146.0*3600.0;
+			entopt.t_zmin = 146.0*3600.0 + latereturn;
 			sv1 = coast(sv1, 2.5*3600.0);
-		}	
+		}
 
 		entopt.EntryLng = -165.0*RAD;
 		entopt.GETbase = GETbase;
@@ -1222,7 +1232,14 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 		entopt.EntryLng = -165.0*RAD;
 		entopt.GETbase = GETbase;
 		entopt.vessel = calcParams.src;
-		entopt.returnspeed = 1;
+		if (latereturn > 0.0)
+		{
+			entopt.returnspeed = 0;
+		}
+		else
+		{
+			entopt.returnspeed = 1;
+		}
 		entopt.RV_MCC = sv;
 		PZREAP.RRBIAS = 1350.0;
 
@@ -1376,7 +1393,7 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 		else
 		{
 			entopt.type = 1;
-			entopt.t_Z = OrbMech::HHMMSSToSS(144.0, 0.0, 0.0);
+			entopt.t_Z = calcParams.TEI + 60.0*3600.0;
 		}
 
 		GETbase = CalcGETBase();
