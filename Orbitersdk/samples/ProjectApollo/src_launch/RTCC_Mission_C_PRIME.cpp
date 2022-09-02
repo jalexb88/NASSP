@@ -45,7 +45,7 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 
 	//Temporary solution for dealing with late launches, 2nd opportunity TLI (Ref: Rev. 1 to the Apollo 8 Spacecraft Operational Trajectory Vol. 2 Summary of transearth trajectory data for Dec 1968 launch window)
 	double latereturn = 0.0;
-	if (mcc->mcclaunchazi > 106.0 && calcParams.TLI > OrbMech::HHMMSSToSS(3.0, 0.0, 0.0))
+	if (SystemParameters.MCLABN > 106.0*RAD && calcParams.TLI > OrbMech::HHMMSSToSS(3.0, 0.0, 0.0))
 	{
 		latereturn = 24 * 3600.0;
 	}
@@ -101,9 +101,6 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 		EMSGSUPP(1, 1);
 		//Make telemetry matrix current
 		GMGMED("G00,CSM,TLM,CSM,CUR;");
-
-		//Make MCC know the launch azimuth
-		mcc->mcclaunchazi = Azi;
 	}
 	break;
 	case 2: //TLI SIMULATION

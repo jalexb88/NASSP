@@ -288,8 +288,6 @@ public:
 	int subThreadType;										// What type of subthread?
 	int subThreadStatus;									// 0 = done/not busy, 1 = busy, negative = done with error
 
-	double mcclaunchazi;
-
 	// GROUND TRACKING NETWORK
 	struct GroundStation GroundStations[MAX_GROUND_STATION]; // Ground Station Array
 	int TransmittingGroundStation;

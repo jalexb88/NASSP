@@ -140,8 +140,6 @@ MCC::MCC(RTCC *rtc)
 	upType = 0;
 	subThreadStatus = 0;
 
-	mcclaunchazi = 0.0;
-
 	// Ground Systems Init
 	Init();
 }
@@ -1330,7 +1328,6 @@ void MCC::SaveState(FILEHANDLE scn) {
 	SAVE_DOUBLE("MCC_StateTime", StateTime);
 	SAVE_DOUBLE("MCC_SubStateTime", SubStateTime);
 	SAVE_DOUBLE("MCC_MoonRevTime", MoonRevTime);
-	SAVE_DOUBLE("MCC_LaunchAzimuth", mcclaunchazi);
 	// Strings
 	if (PCOption_Enabled == true) { SAVE_STRING("MCC_PCOption_Text", PCOption_Text); }
 	if (NCOption_Enabled == true) { SAVE_STRING("MCC_NCOption_Text", NCOption_Text); }
@@ -1875,7 +1872,6 @@ void MCC::LoadState(FILEHANDLE scn) {
 		LOAD_DOUBLE("MCC_StateTime", StateTime);
 		LOAD_DOUBLE("MCC_SubStateTime", SubStateTime);
 		LOAD_DOUBLE("MCC_MoonRevTime", MoonRevTime);
-		LOAD_DOUBLE("MCC_LaunchAzimuth", mcclaunchazi);
 		LOAD_STRING("MCC_PCOption_Text", PCOption_Text, 32);
 		LOAD_STRING("MCC_NCOption_Text", NCOption_Text, 32);
 		LOAD_INT("MCC_TransmittingGroundstation", TransmittingGroundStation);
