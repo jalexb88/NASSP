@@ -43,11 +43,26 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 	//Hardcoded for now, better solution at some point...
 	double t_land = OrbMech::HHMMSSToSS(82.0, 8.0, 26.0);
 
-	//Temporary solution for dealing with late launches, 2nd opportunity TLI (Ref: Rev. 1 to the Apollo 8 Spacecraft Operational Trajectory Vol. 2 Summary of transearth trajectory data for Dec 1968 launch window)
-	double latereturn = 0.0;
-	if (SystemParameters.MCLABN > 106.0*RAD && calcParams.TLI > OrbMech::HHMMSSToSS(3.0, 0.0, 0.0))
+	//Temporary solution for RTE errors with late launches & 2nd opportunity TLI (Ref: Rev. 1 to the Apollo 8 Spacecraft Operational Trajectory Vol. 2 Summary of transearth trajectory data for Dec 1968 launch window)
+	double latereturn;
+	double TLI1scrub = OrbMech::HHMMSSToSS(3, 0, 0);
+	if (SystemParameters.MCLABN > 106.0*RAD)
 	{
-		latereturn = 24 * 3600.0;
+		if (calcParams.TLI > TLI1scrub || fcn == 3 || fcn == 50)
+		{
+			latereturn = 24 * 3600.0;
+		}
+	}
+	else if (SystemParameters.MCLABN > 91.0*RAD)
+	{
+		if ((calcParams.TLI > TLI1scrub && (fcn == 3 || fcn == 4)) || fcn == 50)
+		{
+			latereturn = 24 * 3600.0;
+		}
+	}
+	else
+	{
+		latereturn = 0.0;
 	}
 
 	switch (fcn) {
@@ -311,25 +326,25 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 		{
 			TLIplus = calcParams.TLI + 11.0*3600.0;
 			sprintf(manname, "TLI+11");
-			entopt.t_Z = OrbMech::HHMMSSToSS(50.0, 4.0, 0.0) + latereturn;
+			entopt.t_Z = OrbMech::HHMMSSToSS(50.0, 4.0, 0.0);
 		}
 		else if (fcn == 11)
 		{
 			TLIplus = calcParams.TLI + 25.0*3600.0;
 			sprintf(manname, "TLI+25");
-			entopt.t_Z = OrbMech::HHMMSSToSS(74.0, 38.0, 0.0) + latereturn;
+			entopt.t_Z = OrbMech::HHMMSSToSS(74.0, 38.0, 0.0);
 		}
 		else if (fcn == 12)
 		{
 			TLIplus = calcParams.TLI + 35.0*3600.0;
 			sprintf(manname, "TLI+35");
-			entopt.t_Z = OrbMech::HHMMSSToSS(98.0, 12.0, 0.0) + latereturn;
+			entopt.t_Z = OrbMech::HHMMSSToSS(98.0, 12.0, 0.0);
 		}
 		else if (fcn == 13)
 		{
 			TLIplus = calcParams.TLI + 44.0*3600.0;
 			sprintf(manname, "TLI+44");
-			entopt.t_Z = OrbMech::HHMMSSToSS(98.0, 12.0, 0.0) + latereturn;
+			entopt.t_Z = OrbMech::HHMMSSToSS(98.0, 12.0, 0.0);
 		}
 
 		GETbase = CalcGETBase();
