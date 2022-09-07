@@ -45,20 +45,24 @@ bool RTCC::CalculationMTP_C_PRIME(int fcn, LPVOID &pad, char * upString, char * 
 
 	//Temporary solution for RTE errors with late launches & 2nd opportunity TLI (Ref: Rev. 1 to the Apollo 8 Spacecraft Operational Trajectory Vol. 2 Summary of transearth trajectory data for Dec 1968 launch window)
 	double latereturn;
-	double TLI1scrub = OrbMech::HHMMSSToSS(3, 0, 0);
+	double TLIscrub = OrbMech::HHMMSSToSS(3, 0, 0);
 	if (SystemParameters.MCLABN > 106.0*RAD)
 	{
-		if (calcParams.TLI > TLI1scrub || fcn == 3 || fcn == 50)
+		if (calcParams.TLI > TLIscrub || fcn == 3 || fcn == 50)
 		{
 			latereturn = 24 * 3600.0;
 		}
 	}
 	else if (SystemParameters.MCLABN > 91.0*RAD)
 	{
-		if ((calcParams.TLI > TLI1scrub && (fcn == 3 || fcn == 4)) || fcn == 50)
+		if ((calcParams.TLI > TLIscrub && (fcn == 3 || fcn == 4)) || fcn == 50)
 		{
 			latereturn = 24 * 3600.0;
 		}
+	}
+	else if (SystemParameters.MCLABN > 80.0*RAD && calcParams.TLI > TLIscrub && fcn == 50)
+	{
+		latereturn = 24 * 3600.0;
 	}
 	else
 	{
