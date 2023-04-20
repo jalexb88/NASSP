@@ -194,7 +194,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		Saturn *cm = (Saturn *)calcParams.src;
 
 		//Get TEPHEM
-		TEPHEM0 = 40403.;
+		TEPHEM0 = 41133.;
 		tephem_scal = GetTEPHEMFromAGC(&cm->agc.vagc);
 		double LaunchMJD = (tephem_scal / 8640000.) + TEPHEM0;
 		LaunchMJD = (LaunchMJD - SystemParameters.GMTBASE)*24.0;
@@ -221,7 +221,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		GMGMED(Buff);
 		sprintf_s(Buff, "P15,LGC,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
-		GMGMED("P15,AGS,,100:00:00;");
+		GMGMED("P15,AGS,,110:00:00;");
 
 		//P12: IU GRR and Azimuth
 		OrbMech::SStoHHMMSS(T_GRR, hh, mm, ss);
@@ -281,7 +281,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		med_m66.AttitudeOpt = RTCC_ATTITUDE_INERTIAL;
 		med_m66.BurnParamNo = 1;
 		med_m66.CoordInd = 0; //LVLH
-		med_m66.Att = _V(48.6*RAD, -130.9*RAD, -139.1*RAD); //Make this launch day specific?
+		med_m66.Att = _V(41.6*RAD, 120.8*RAD, 131.9*RAD); //Make this launch day specific?
 		med_m66.ConfigChangeInd = RTCC_CONFIGCHANGE_UNDOCKING;
 		med_m66.FinalConfig = "CL";
 
@@ -302,7 +302,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		double GETbase, TLIBase, TIG;
 		EphemerisData sv;
 		SV sv1;
-		char buffer1[1000];
 
 		AP11MNV * form = (AP11MNV *)pad;
 
@@ -312,7 +311,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		TLIBase = calcParams.TLI;
 		TIG = TLIBase + 90.0*60.0;
 		entopt.ATPLine = 2; //AOL
-		entopt.r_rbias = 1250.0;
+		entopt.r_rbias = 1190.0;
 
 		sv1.mass = PZMPTCSM.mantable[1].CommonBlock.CSMMass;
 		sv1.gravref = hEarth;
@@ -324,7 +323,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.GETbase = GETbase;
 		entopt.enginetype = RTCC_ENGINETYPE_CSMSPS;
 		entopt.TIGguess = TIG;
-		entopt.t_Z = OrbMech::HHMMSSToSS(16.0, 46.0, 0.0);
+		entopt.t_Z = OrbMech::HHMMSSToSS(24.0, 38.0, 09.0);
 		entopt.type = 1;
 		entopt.vessel = calcParams.src;
 		entopt.RV_MCC = sv1;
@@ -351,19 +350,9 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->GET05G = res.GET05G;
 
 		sprintf(form->purpose, "TLI+90");
-		sprintf(form->remarks, "No ullage, undocked");
-
-		AGCStateVectorUpdate(buffer1, RTCC_MPT_CSM, RTCC_MPT_CSM, sv, true);
-
-		sprintf(uplinkdata, "%s", buffer1);
-		if (upString != NULL) {
-			// give to mcc
-			strncpy(upString, uplinkdata, 1024 * 3);
-			sprintf(upDesc, "CSM state vector and V66");
-		}
 	}
 	break;
-	case 13: //LIFTOFF+8 PAD
+	case 13: //LIFTOFF+9 PAD
 	{
 		EntryOpt entopt;
 		EntryResults res;
@@ -383,10 +372,10 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.enginetype = RTCC_ENGINETYPE_CSMSPS;
 		entopt.type = 1;
 		entopt.vessel = calcParams.src;
-		entopt.r_rbias = 1250.0;
+		entopt.r_rbias = 1190.0;
 
-		entopt.TIGguess = form->GETI[0] = OrbMech::HHMMSSToSS(8, 0, 0);
-		entopt.t_Z = OrbMech::HHMMSSToSS(25.0, 43.0, 0.0);
+		entopt.TIGguess = form->GETI[0] = OrbMech::HHMMSSToSS(9, 0, 0);
+		entopt.t_Z = OrbMech::HHMMSSToSS(33.0, 49.0, 0.0);
 		entopt.RV_MCC = sv1;
 		EntryTargeting(&entopt, &res);
 		form->dVT[0] = length(res.dV_LVLH) / 0.3048;
@@ -545,7 +534,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		double ss;
 
 		double TLIbase = calcParams.TLI - 5.0*60.0 - 20.0; //Approximate TLI ignition
-		double LOIFP = OrbMech::HHMMSSToSS(83.0, 25.0, 18.2); //Flight plan LOI TIG
+		double LOIFP = OrbMech::HHMMSSToSS(88.0, 55.0, 37.5); //Flight plan LOI TIG
 
 		bool IterateNodeGET = false;
 		if (SystemParameters.MCLABN < 77.0*RAD && calcParams.TLI < OrbMech::HHMMSSToSS(3, 0, 0))
@@ -563,7 +552,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		PZMCCPLN.Config = true;
 		PZMCCPLN.Column = 1;
 		PZMCCPLN.SFPBlockNum = 1;
-		PZMCCPLN.Mode = 5;
+		PZMCCPLN.Mode = 4;
 		CSMmass = calcParams.src->GetMass();
 		LMmass = calcParams.tgt->GetMass();
 

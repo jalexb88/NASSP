@@ -44,14 +44,17 @@ void MCC::MissionSequence_J3()
 	case MST_J3_EPO1: //TLI Simulation to TLI+90 PAD
 		UpdateMacro(UTP_NONE, PT_NONE, true, 11, MST_J3_EPO2);
 		break;
-	case MST_J3_EPO2: //TLI+90 Maneuver PAD to TLI+5h P37 PAD
-		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 12, MST_J3_EPO3);
+	case MST_J3_EPO2: //TLI+90 Maneuver PAD to L/O+9 P37 PAD
+		UpdateMacro(UTP_PADONLY, PT_AP11MNV, SubStateTime > 5.0*60.0, 12, MST_J3_EPO3);
 		break;
-	case MST_J3_EPO3: //TLI+5h P37 PAD to TLI PAD
-		UpdateMacro(UTP_PADONLY, PT_P37PAD, SubStateTime > 3.0*60.0, 13, MST_J3_EPO4);
+	case MST_J3_EPO3: //L/O+9 P37 PAD to TLI PAD
+		UpdateMacro(UTP_PADONLY, PT_P37PAD, rtcc->GETEval2(2.0*3600.0 + 40.0*60.0), 13, MST_J3_EPO4); //FP says 2:50:00, but I used 10 early to account for very late launches (Real Apollo 17 was 2:27:00)
 		break;
-	case MST_J3_EPO4: //TLI PAD to TLI Evaluation
-		UpdateMacro(UTP_PADONLY, PT_TLIPAD, rtcc->GETEval2(rtcc->calcParams.TLI + 18.0), 14, MST_J3_TRANSLUNAR1);
+	case MST_J3_EPO4: //TLI PAD to SV Update
+		UpdateMacro(UTP_PADONLY, PT_TLIPAD, SubStateTime > 5.0*60.0, 14, MST_J3_EPO5);
+		break;
+	case MST_J3_EPO5: //SV Update to TLI Evaluation
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TLI + 18.0), 5, MST_J3_TRANSLUNAR1);
 		break;
 	case MST_J3_TRANSLUNAR1: //TLI Evaluation to SIVB Evasive Maneuver
 		UpdateMacro(UTP_NONE, PT_NONE, true, 15, MST_J3_TRANSLUNAR2, scrubbed, rtcc->GETEval2(3.0*3600.0), MST_J3_EPO1);
