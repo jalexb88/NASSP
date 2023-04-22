@@ -40,6 +40,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	bool preliminary = false;
 	bool scrubbed = false;
 
+	double NominalLaunchGMT = OrbMech::HHMMSSToSS(2, 53, 0); //Nominal launch GMT
+
 	switch (fcn) {
 	case 1: //GENERIC CMC CSM STATE VECTOR UPDATE
 	case 3: //GENERIC LGC CSM STATE VECTOR UPDATE
@@ -404,6 +406,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->SepATT = DMTBuffer[0].IMUAtt;
 		form->ExtATT = OrbMech::imulimit(_V(300.0 - form->SepATT.x, form->SepATT.y + 180.0, 360.0 - form->SepATT.z));
 
+		//Add Ordeal data (fix me)
+		double R2 = 306.0; //R2 Ign, must be calculated dynamically based on launch delay
+		int yaw = 0; // Opportunity 1 = 0, Opportunity 2 = 3
+		sprintf(form->remarks, "\nXX%04.1f R2 Align\nXX%04.1f R2 Ign\nXX57:10 ORDEAL Start\nXXX00%d YAW", R2, R2 + 6.0, yaw);
+
 		//Delete maneuvers from MPT
 		GMGMED("M62,CSM,1,D;");
 
@@ -451,38 +458,46 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.enginetype = RTCC_ENGINETYPE_CSMSPS;
 		entopt.type = 1;
 		entopt.vessel = calcParams.src;
-		entopt.r_rbias = 1250.0;
+		entopt.r_rbias = 1190.0;
 
 		if (fcn == 16)
 		{
 			entopt.TIGguess = form->GETI[0] = OrbMech::HHMMSSToSS(15, 0, 0);
-			entopt.t_Z = OrbMech::HHMMSSToSS(50.0, 6.0, 0.0);
-			entopt.RV_MCC = sv2;
-			EntryTargeting(&entopt, &res);
-			form->dVT[0] = length(res.dV_LVLH) / 0.3048;
-			form->GET400K[0] = res.GET05G;
-			form->lng[0] = round(res.longitude*DEG);
-		}
-		else
-		{
-			entopt.TIGguess = form->GETI[0] = OrbMech::HHMMSSToSS(25, 0, 0);
-			entopt.t_Z = OrbMech::HHMMSSToSS(74.0, 12.0, 0.0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(57.0, 56.0, 0.0);
 			entopt.RV_MCC = sv1;
 			EntryTargeting(&entopt, &res);
 			form->dVT[0] = length(res.dV_LVLH) / 0.3048;
 			form->GET400K[0] = res.GET05G;
 			form->lng[0] = round(res.longitude*DEG);
 
-			entopt.TIGguess = form->GETI[1] = OrbMech::HHMMSSToSS(35, 0, 0);
-			entopt.t_Z = OrbMech::HHMMSSToSS(73.0, 39.0, 0.0);
+			entopt.TIGguess = form->GETI[1] = OrbMech::HHMMSSToSS(25, 0, 0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(57.0, 25.0, 0.0);
+			entopt.RV_MCC = sv1;
+			EntryTargeting(&entopt, &res);
+			form->dVT[1] = length(res.dV_LVLH) / 0.3048;
+			form->GET400K[1] = res.GET05G;
+			form->lng[1] = round(res.longitude*DEG);
+		}
+		else
+		{
+			entopt.TIGguess = form->GETI[0] = OrbMech::HHMMSSToSS(35, 0, 0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(81.0, 39.0, 0.0);
+			entopt.RV_MCC = sv1;
+			EntryTargeting(&entopt, &res);
+			form->dVT[0] = length(res.dV_LVLH) / 0.3048;
+			form->GET400K[0] = res.GET05G;
+			form->lng[0] = round(res.longitude*DEG);
+
+			entopt.TIGguess = form->GETI[1] = OrbMech::HHMMSSToSS(45, 0, 0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(81.0, 18.0, 0.0);
 			entopt.RV_MCC = sv2;
 			EntryTargeting(&entopt, &res);
 			form->dVT[1] = length(res.dV_LVLH) / 0.3048;
 			form->GET400K[1] = res.GET05G;
 			form->lng[1] = round(res.longitude*DEG);
 
-			entopt.TIGguess = form->GETI[2] = OrbMech::HHMMSSToSS(45, 0, 0);
-			entopt.t_Z = OrbMech::HHMMSSToSS(97.0, 58.0, 0.0);
+			entopt.TIGguess = form->GETI[2] = OrbMech::HHMMSSToSS(55, 0, 0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(105.0, 30.0, 0.0);
 			entopt.RV_MCC = sv2;
 			EntryTargeting(&entopt, &res);
 			form->dVT[2] = length(res.dV_LVLH) / 0.3048;
@@ -490,7 +505,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			form->lng[2] = round(res.longitude*DEG);
 
 			entopt.TIGguess = form->GETI[3] = OrbMech::HHMMSSToSS(60, 0, 0);
-			entopt.t_Z = OrbMech::HHMMSSToSS(122.0, 01.0, 0.0);
+			entopt.t_Z = OrbMech::HHMMSSToSS(129.0, 40.0, 0.0);
 			entopt.RV_MCC = sv2;
 			EntryTargeting(&entopt, &res);
 			form->dVT[3] = length(res.dV_LVLH) / 0.3048;
@@ -506,9 +521,13 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		MATRIX3 REFSMMAT;
 
 		refsopt.REFSMMATopt = 6;
-		refsopt.REFSMMATTime = 40547.30729122223; //183:00:30 GET of nominal mission
+		refsopt.REFSMMATTime = 41668.18229177778;  //241:29:30 GET of nominal mission
 
 		REFSMMAT = REFSMMATCalc(&refsopt);
+
+		//Store in MED slot
+		EMGSTSTM(RTCC_MPT_LM, REFSMMAT, RTCC_REFSMMAT_TYPE_LLD, RTCCPresentTimeGMT());
+
 		AGCDesiredREFSMMATUpdate(buffer, REFSMMAT);
 		sprintf(uplinkdata, "%s", buffer);
 
@@ -533,17 +552,12 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		int hh, mm;
 		double ss;
 
-		double TLIbase = calcParams.TLI - 5.0*60.0 - 20.0; //Approximate TLI ignition
-		double LOIFP = OrbMech::HHMMSSToSS(88.0, 55.0, 37.5); //Flight plan LOI TIG
+		double TLIbase = calcParams.TLI - 5.0*60.0 - 45.0; //Approximate TLI ignition
 
-		bool IterateNodeGET = false;
-		if (SystemParameters.MCLABN < 77.0*RAD && calcParams.TLI < OrbMech::HHMMSSToSS(3, 0, 0))
-		{
-			IterateNodeGET = true;
-		}
+		double LOIGET = GETfromGMT(320138.0 + NominalLaunchGMT);
 
-		MCC1GET = TLIbase + 9.0*3600.0;
-		MCC2GET = TLIbase + 28.0*3600.0;
+		MCC1GET = TLIbase + 5.0*3600.0 + 24.0*60.0;
+		MCC2GET = TLIbase + 32.0*3600.0 + 9.0*60.0;
 
 		sv = StateVectorCalcEphem(calcParams.src);
 		GETbase = CalcGETBase();
@@ -561,27 +575,24 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
 
-		if (IterateNodeGET)
+		//Iterate node GET for MCC-2
+		bool init = true;
+		F23time = LOIGET - 11.0*60.0;
+		while (PZMCCDIS.data[0].GET_LOI < LOIGET - 5.0 || init)
 		{
-			//Iterate node GET for MCC-2
-			bool init = true;
-			F23time = LOIFP - 11.0*60.0;
-			while (PZMCCDIS.data[0].GET_LOI < LOIFP - 5.0 || init)
-			{
-				OrbMech::SStoHHMMSS(F23time, hh, mm, ss);
-				sprintf_s(Buff, "F23,%d:%d:%.2lf,%d:%d:%.2lf;", hh, mm, ss, hh, mm + 10, ss);
-				GMGMED(Buff);
-				TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
-				F23time = F23time + 5.0;
-				if (init) init = false;
-			}
+			OrbMech::SStoHHMMSS(F23time, hh, mm, ss);
+			sprintf_s(Buff, "F23,%d:%d:%.2lf,%d:%d:%.2lf;", hh, mm, ss, hh, mm + 10, ss);
+			GMGMED(Buff);
+			TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
+			F23time = F23time + 5.0;
+			if (init) init = false;
 		}
 
 		if (fcn == 19 || fcn == 21) // MCC-1
 		{
 			mccnum = 1;
 
-			if (length(PZMCCDIS.data[0].DV_MCC) < 120.0*0.3048) // Can we wait until MCC-2?
+			if (length(PZMCCDIS.data[0].DV_MCC) < 30.0*0.3048) // Can we wait until MCC-2? // To Do: Check TLC DV budget for Apollo 17 
 			{
 				scrubbed = true;
 			}
@@ -591,20 +602,17 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 				TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
 
-				if (IterateNodeGET)
+				//Re-iterate node GET for MCC-1
+				bool init = true;
+				F23time = LOIGET - 11.0*60.0;
+				while (PZMCCDIS.data[0].GET_LOI < LOIGET - 5.0 || init)
 				{
-					//Re-iterate node GET for MCC-1
-					bool init = true;
-					F23time = LOIFP - 11.0*60.0;
-					while (PZMCCDIS.data[0].GET_LOI < LOIFP - 5.0 || init)
-					{
-						OrbMech::SStoHHMMSS(F23time, hh, mm, ss);
-						sprintf_s(Buff, "F23,%d:%d:%.2lf,%d:%d:%.2lf;", hh, mm, ss, hh, mm + 10, ss);
-						GMGMED(Buff);
-						TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
-						F23time = F23time + 5.0;
-						if (init) init = false;
-					}
+					OrbMech::SStoHHMMSS(F23time, hh, mm, ss);
+					sprintf_s(Buff, "F23,%d:%d:%.2lf,%d:%d:%.2lf;", hh, mm, ss, hh, mm + 10, ss);
+					GMGMED(Buff);
+					TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
+					F23time = F23time + 5.0;
+					if (init) init = false;
 				}
 			}
 		}
@@ -633,6 +641,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 		else
 		{
+			sprintf(upMessage, "MCC-%d has been scrubbed.", mccnum);
 			DeltaV_LVLH = _V(0.0,0.0,0.0);
 		}
 
@@ -642,7 +651,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			{
 				char buffer1[1000];
 
-				sprintf(upMessage, "MCC-%d has been scrubbed.", mccnum);
 				sprintf(upDesc, "CSM state vector and V66");
 
 				AGCStateVectorUpdate(buffer1, RTCC_MPT_CSM, RTCC_MPT_CSM, sv, true);
@@ -694,7 +702,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		AP11ManPADOpt opt;
 		SV sv;
 		double GETbase;
-		char buffer1[1000];
 
 		AP11MNV * form = (AP11MNV *)pad;
 
@@ -707,8 +714,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.RV_MCC = sv;
 		entopt.TIGguess = calcParams.LOI - 5.0*3600.0;
 		entopt.vessel = calcParams.src;
-		//PZREAP.RRBIAS = 1250.0;
-		entopt.t_zmin = 145.0*3600.0;
+		//PZREAP.RRBIAS = 1190.0;
+		entopt.t_zmin = 153.0*3600.0;
 		entopt.entrylongmanual = false;
 		entopt.ATPLine = 0; //MPL
 
@@ -736,15 +743,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->RTGO = res.RTGO;
 		form->VI0 = res.VIO / 0.3048;
 		form->GET05G = res.GET05G;
-
-		AGCStateVectorUpdate(buffer1, sv, true, GETbase, true);
-
-		sprintf(uplinkdata, "%s", buffer1);
-		if (upString != NULL) {
-			// give to mcc
-			strncpy(upString, uplinkdata, 1024 * 3);
-			sprintf(upDesc, "CSM state vector and V66");
-		}
 	}
 	break;
 	case 24: //MCC-3
@@ -3003,6 +3001,17 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			// give to mcc
 			strncpy(upString, uplinkdata, 1024 * 3);
 			sprintf(upDesc, "TEI REFSMMAT");
+		}
+	}
+	break;
+	case 140: //TLC lunar pericynthion evaluation
+	{
+		SV sv_peri = FindPericynthion(StateVectorCalc(calcParams.src));
+		double h_peri = length(sv_peri.R) - OrbMech::R_Moon;
+
+		if ((h_peri / 1852.0) > 20.0 )
+		{
+			scrubbed = true;
 		}
 	}
 	break;
