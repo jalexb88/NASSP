@@ -1577,7 +1577,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			manopt.R_LLS = BZLAND.rad[RTCC_LMPOS_BEST];
 			manopt.dV_LVLH = DeltaV_LVLH;
 			manopt.enginetype = RTCC_ENGINETYPE_CSMSPS;
-			manopt.HeadsUp = false;
+			manopt.HeadsUp = true;
 			manopt.REFSMMAT = GetREFSMMATfromAGC(&mcc->cm->agc.vagc, true);
 			//manopt.sxtstardtime = -40.0*60.0;
 			manopt.TIG = TimeofIgnition;
@@ -1586,6 +1586,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			AP11ManeuverPAD(&manopt, *form);
 			sprintf(form->purpose, "CIRC");
+			sprintf(form->remarks, "Four-jet ullage for 12 seconds");
 
 			//Coast SV to CIRC-10min
 			double svt = TimeofIgnition - 10.0*60.0;
@@ -1599,7 +1600,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			if (upString != NULL) {
 				// give to mcc
 				strncpy(upString, uplinkdata, 1024 * 3);
-				sprintf(upDesc, "CSM state vector, target load");
+				sprintf(upDesc, "CSM state vector (CIRC-10), target load");
 			}
 		}
 	}
@@ -3110,7 +3111,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		double SV_GET = OrbMech::GETfromMJD(sv0.MJD, CalcGETBase());
 		sv1 = coast(sv0, (calcParams.PDI - 10.0*60.0) - SV_GET);
 
-		AGCStateVectorUpdate(buffer, sv1, false, true);
+		AGCStateVectorUpdate(buffer, sv1, false);
 
 		sprintf(uplinkdata, "%s", buffer);
 		if (upString != NULL) {
