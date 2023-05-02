@@ -490,8 +490,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		REFSMMAT = REFSMMATCalc(&refsopt);
 
-		//Store in MED slot
-		EMGSTSTM(RTCC_MPT_LM, REFSMMAT, RTCC_REFSMMAT_TYPE_LLD, RTCCPresentTimeGMT());
+		//Store in LCV slot
+		EMGSTSTM(RTCC_MPT_CSM, REFSMMAT, RTCC_REFSMMAT_TYPE_LCV, RTCCPresentTimeGMT());
 
 		AGCDesiredREFSMMATUpdate(buffer, REFSMMAT);
 		sprintf(uplinkdata, "%s", buffer);
@@ -1328,7 +1328,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 	}
 	break;
-	case 33: //LOI-1 EVALUATION
+	case 33: //LOI EVALUATION
 	{
 		SV sv;
 		OELEMENTS coe;
@@ -1367,7 +1367,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 	}
 	break;
-	case 36: //ABORT CONSTANTS
+	case 36: //ABORT CONSTANTS UPDATE
 	{
 		/*AP11AGSACT *form = (AP11AGSACT*)pad;
 
@@ -1382,11 +1382,19 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		svcm0 = StateVectorCalc(calcParams.src);
 		svlm0 = StateVectorCalc(calcParams.tgt);
 
-		svcm1 = ExecuteManeuver(svcm0, TimeofIgnition, DeltaV_LVLH, 0.0, RTCC_ENGINETYPE_CSMSPS);
-		svlm1 = ExecuteManeuver(svlm0, calcParams.TIGSTORE1, calcParams.DVSTORE1, 0.0, RTCC_ENGINETYPE_LMRCSMINUS4);
+		if (mcc->MoonRev >= 13)
+		{
+			svcm1 = svcm0;
+			svlm1 = svlm0;
+		}
+		else
+		{
+			svcm1 = ExecuteManeuver(svcm0, TimeofIgnition, DeltaV_LVLH, 0.0, RTCC_ENGINETYPE_CSMSPS);
+			svlm1 = ExecuteManeuver(svlm0, calcParams.TIGSTORE1, calcParams.DVSTORE1, 0, RTCC_ENGINETYPE_LMRCSMINUS4);
+		}
 
 		t_sunrise = calcParams.PDI + 3.0*3600.0;
-		t_TPI = FindOrbitalSunrise(svcm1, t_sunrise) - 23.0*60.0;
+		t_TPI = FindOrbitalSunrise(svcm1, t_sunrise) - 16.0*60.0;
 
 		opt.dt_stage = 999999.9;
 		opt.W_TAPS = 4711.0;
@@ -1508,7 +1516,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "DOI-2");
-		sprintf(form->remarks, "TIG AGS 373: %04.1f", AGSTIG / 60.0);
+		sprintf(form->remarks, "TIG AGS 373: %+05.1f", AGSTIG / 60.0);
 	}
 	break;
 	case 39: //CSM CIRC calculation
@@ -2138,77 +2146,110 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 72: //No PDI+12 PAD
 	{
-		/*AP11LMMNV * form = (AP11LMMNV*)pad;
-
-		LambertMan opt;
-		AP11LMManPADOpt manopt;
+		AP11LMManPADOpt opt;
 		TwoImpulseResuls res;
-		SV sv_LM, sv_INP, sv_CSM;
+		SV svlm0, svlm1, svcsm0, svcsm1;
 		VECTOR3 dV_LVLH;
-		double t_sunrise, t_CSI, t_TPI, dt, P30TIG, t_P;
+		double P30TIG, t_sunrise, t_CSI, t_TPI, DH, TIG, dvx1, dvx2;
 
-		sv_CSM = StateVectorCalc(calcParams.src);
-		sv_LM = StateVectorCalc(calcParams.tgt);
+		AP11LMMNV * form = (AP11LMMNV *)pad;
+
+		svcsm0 = StateVectorCalc(calcParams.src);
+		svlm0 = StateVectorCalc(calcParams.tgt);
+
+		TIG = calcParams.PDI + 12.0*60.0;
+		dvx1 = dvx2 = 100.0;
+
+		svcsm1 = ExecuteManeuver(svcsm0, TimeofIgnition, DeltaV_LVLH, 0, RTCC_ENGINETYPE_CSMSPS);
+		svlm1 = ExecuteManeuver(svlm0, calcParams.TIGSTORE1, calcParams.DVSTORE1, 0, RTCC_ENGINETYPE_LMRCSMINUS4);
 
 		t_sunrise = calcParams.PDI + 3.0*3600.0;
-		t_TPI = FindOrbitalSunrise(sv_CSM, t_sunrise) - 23.0*60.0;
+	    t_TPI = FindOrbitalSunrise(svcsm1, t_sunrise) - 16.0*60.0;
+	    //Round to next 30 seconds
+	    t_TPI = round(t_TPI / 30.0)*30.0;
 
-		GZGENCSN.TIElevationAngle = 26.6*RAD;
+		SPQOpt coeopt;
+		SPQResults coeres;
 
-		if (mcc->MoonRev >= 14)
+		coeopt.DH = 15.0*1852.0;
+		coeopt.E = 26.6*RAD;
+		coeopt.sv_A = ExecuteManeuver(svlm0, TIG, _V(dvx2, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
+		coeopt.sv_P = svcsm1;
+		coeopt.K_CDH = 0;
+		coeopt.t_CSI = TIG + 55.0*60.0;
+		coeopt.t_TPI = t_TPI;
+
+		//Find solution for no DOI-2 case
+		int n = 0, nmax = 100;
+		ConcentricRendezvousProcessor(coeopt, coeres);
+		DH = coeres.DH - coeopt.DH;
+		while (abs(DH) > 0.1*1852.0 && n < nmax)
 		{
-			sv_INP = sv_LM;
+			if (DH > 0.0)
+			{
+				dvx2 -= 0.1;
+			}
+			else
+			{
+				dvx2 += 0.1;
+			}
+
+			coeopt.sv_A = ExecuteManeuver(svlm0, TIG, _V(dvx2, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
+
+			ConcentricRendezvousProcessor(coeopt, coeres);
+
+			DH = coeres.DH - coeopt.DH;
+
+			n++;
 		}
-		else
+
+		//Find nominal solution (with DOI-2)
+		n = 0;
+		coeopt.sv_A = ExecuteManeuver(svlm1, TIG, _V(dvx1, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
+		ConcentricRendezvousProcessor(coeopt, coeres);
+		DH = coeres.DH - coeopt.DH;
+		while (abs(DH) > 0.1*1852.0 && n < nmax)
 		{
-			sv_INP = ExecuteManeuver(sv_LM, TimeofIgnition, DeltaV_LVLH, 0.0, RTCC_ENGINETYPE_LMDPS);
-		}
-		opt.mode = 1;
-		opt.axis = RTCC_LAMBERT_MULTIAXIS;
-		opt.DH = 15.0*1852.0;
-		opt.ElevationAngle = 26.6*RAD;
-		opt.N = 0;
-		opt.Perturbation = RTCC_LAMBERT_PERTURBED;
-		//Angle confirmed by Apollo 11 FIDO loop (finally!)
-		opt.PhaseAngle = 4.475*RAD;
-		opt.sv_A = sv_INP;
-		opt.sv_P = sv_CSM;
-		//PDI+12
-		opt.T1 = calcParams.PDI + 12.0*60.0;
-		//Estimate for T2
-		opt.T2 = opt.T1 + 3600.0 + 46.0*60.0;
+			if (DH > 0.0)
+			{
+				dvx1 -= 0.1;
+			}
+			else
+			{
+				dvx1 += 0.1;
+			}
 
-		for (int i = 0;i < 2;i++)
-		{
-			LambertTargeting(&opt, res);
-			dt = t_TPI - res.t_TPI;
-			opt.T2 += dt;
+			coeopt.sv_A = ExecuteManeuver(svlm1, TIG, _V(dvx1, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
+
+			ConcentricRendezvousProcessor(coeopt, coeres);
+
+			DH = coeres.DH - coeopt.DH;
+
+			n++;
 		}
 
-		t_P = OrbMech::period(sv_INP.R, sv_INP.V + res.dV, OrbMech::mu_Moon);
-		t_CSI = opt.T2 - t_P / 2.0;
+		PoweredFlightProcessor(svlm1, TIG, RTCC_ENGINETYPE_LMDPS, 0.0, _V(dvx1, 0.0, -50.0)*0.3048, true, P30TIG, dV_LVLH);
+		t_CSI = coeres.t_CSI;
 
-		PoweredFlightProcessor(sv_INP, opt.T1, RTCC_ENGINETYPE_LMDPS, 0.0, res.dV, false, P30TIG, dV_LVLH);
-		//Store for P76 PAD
-		calcParams.TIGSTORE1 = P30TIG;
-		calcParams.DVSTORE1 = dV_LVLH;
+		opt.R_LLS = BZLAND.rad[RTCC_LMPOS_BEST];
+		opt.dV_LVLH = dV_LVLH;
+		opt.enginetype = RTCC_ENGINETYPE_LMDPS;
+		opt.HeadsUp = false;
+		opt.REFSMMAT = GetREFSMMATfromAGC(&mcc->lm->agc.vagc, false);
+		opt.TIG = P30TIG;
+		opt.vessel = calcParams.tgt;
+		opt.csmlmdocked = false;
+		opt.useSV = true;
+		opt.RV_MCC = svlm1;
 
-		manopt.R_LLS = BZLAND.rad[RTCC_LMPOS_BEST];
-		manopt.dV_LVLH = dV_LVLH;
-		manopt.enginetype = RTCC_ENGINETYPE_LMDPS;
-		manopt.HeadsUp = false;
-		manopt.REFSMMAT = GetREFSMMATfromAGC(&mcc->lm->agc.vagc, false);
-		manopt.RV_MCC = sv_INP;
-		manopt.TIG = P30TIG;
-		manopt.useSV = true;
-		manopt.vessel = calcParams.tgt;
+		double AGSTIG = P30TIG - GETfromGMT(GetAGSClockZero());
 
-		AP11LMManeuverPAD(&manopt, *form);
+		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "No PDI +12 ABORT");
-
+		sprintf(form->remarks, "TIG 373: %+05.1f\nDVX NO DOI-2: %+07.1f", AGSTIG / 60.0, dvx2);
 		form->type = 1;
 		form->t_CSI = round(t_CSI);
-		form->t_TPI = round(t_TPI);*/
+		form->t_TPI = round(t_TPI);
 	}
 	break;
 	case 73: //LUNAR SURFACE DATA CARD

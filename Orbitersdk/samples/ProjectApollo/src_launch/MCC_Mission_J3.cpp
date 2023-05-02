@@ -301,7 +301,7 @@ void MCC::MissionSequence_J3()
 			break;
 		}
 		break;
-	case MST_J3_LUNAR_ORBIT_LOI_DAY_2: //DOI-1 calculation to Photo PADs
+	case MST_J3_LUNAR_ORBIT_LOI_DAY_2: //DOI-1 calculation to Photo PAD (90:45)
 		UpdateMacro(UTP_NONE, PT_NONE, MoonRev >= 1 && MoonRevTime > 30.0*60.0, 29, MST_J3_LUNAR_ORBIT_LOI_DAY_3);
 		break;
 	case MST_J3_LUNAR_ORBIT_LOI_DAY_3: //Photo PAD (90:45) to Photo PAD (91:20)
@@ -355,10 +355,10 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_1: //CSM SV update to DOI-2 update
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 11 && MoonRevTime > 30.0*60.0, 5, MST_J3_LUNAR_ORBIT_PDI_DAY_2);
 		break;
-	case MST_J3_LUNAR_ORBIT_PDI_DAY_2: //DOI-2 update to Abort constants
+	case MST_J3_LUNAR_ORBIT_PDI_DAY_2: //DOI-2 update to Abort constants update
 		UpdateMacro(UTP_PADONLY, PT_AP11LMMNV, SubStateTime > 5.0*60.0, 38, MST_J3_LUNAR_ORBIT_PDI_DAY_3);
 		break;
-	case MST_J3_LUNAR_ORBIT_PDI_DAY_3: //Abort constants to LGC activation update
+	case MST_J3_LUNAR_ORBIT_PDI_DAY_3: //Abort constants update to LGC activation update
 		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADWITHLGCUPLINK, PT_AP11AGSACT*/, SubStateTime > 5.0*60.0, 36, MST_J3_LUNAR_ORBIT_PDI_DAY_4);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_4: //LGC activation update to LGC clock sync elvaluation
@@ -398,7 +398,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADONLY, PT_AP11P76PAD, SubStateTime > 3.0*60.0, 54, MST_J3_LUNAR_ORBIT_PRE_DOI_1);
 		break;
 	case MST_J3_LUNAR_ORBIT_PRE_DOI_1: //No PDI+12 PAD to PDI PAD
-		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADONLY, PT_AP11LMMNV*/, SubStateTime > 3.0*60.0, 72, MST_J3_LUNAR_ORBIT_PRE_DOI_2);
+		UpdateMacro(UTP_PADONLY, PT_AP11LMMNV, SubStateTime > 3.0*60.0, 72, MST_J3_LUNAR_ORBIT_PRE_DOI_2);
 		break;
 	case MST_J3_LUNAR_ORBIT_PRE_DOI_2: //PDI PAD to PDI abort PAD
 		UpdateMacro(UTP_PADONLY, PT_AP11PDIPAD, SubStateTime > 3.0*60.0, 70, MST_J3_LUNAR_ORBIT_PRE_DOI_3);
@@ -407,11 +407,11 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADONLY, PT_AP12PDIABORTPAD, SubStateTime > 3.0*60.0, 71, MST_J3_LUNAR_ORBIT_PRE_DOI_4);
 		break;
 	case MST_J3_LUNAR_ORBIT_PRE_DOI_4: //Lunar Surface PAD to No DOI-2 PAD
-		UpdateMacro(UTP_PADONLY, PT_AP12LUNSURFPAD, SubStateTime > 3.0*60.0, 73, MST_J3_LUNAR_ORBIT_PRE_DOI_5);
+		UpdateMacro(UTP_PADONLY, PT_AP12LUNSURFPAD, SubStateTime > 3.0*60.0, 73, MST_J3_LUNAR_ORBIT_PRE_DOI_6);
 		break;
-	case MST_J3_LUNAR_ORBIT_PRE_DOI_5: //No DOI-2 PAD to CIRC burn update
+	/*case MST_J3_LUNAR_ORBIT_PRE_DOI_5: //No DOI-2 PAD to CIRC burn update
 		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 3.0*60.0, 135, MST_J3_LUNAR_ORBIT_PRE_DOI_6);
-		break;
+		break;*/
 	case MST_J3_LUNAR_ORBIT_PRE_DOI_6: //CIRC burn update to P24 track PAD (LDMK RP-3)
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 3.0*60.0, 40, MST_J3_LUNAR_ORBIT_PRE_DOI_7);
 		break;
@@ -457,10 +457,10 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_NO_PDI_4: //PDI-2 abort PAD to Lunar Surface PAD
 		UpdateMacro(UTP_PADONLY, PT_AP12PDIABORTPAD, SubStateTime > 3.0*60.0, 71, MST_J3_LUNAR_ORBIT_NO_PDI_5);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_5: //Lunar Surface PAD to Abort constants
+	case MST_J3_LUNAR_ORBIT_NO_PDI_5: //Lunar Surface PAD to Abort constants update
 		UpdateMacro(UTP_PADONLY, PT_AP12LUNSURFPAD, SubStateTime > 3.0*60.0, 73, MST_J3_LUNAR_ORBIT_NO_PDI_6);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_6: //Abort constants to LGC descent target update
+	case MST_J3_LUNAR_ORBIT_NO_PDI_6: //Abort constants update to LGC descent target update
 		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADWITHLGCUPLINK, PT_AP11AGSACT*/, SubStateTime > 3.0*60.0, 36, MST_J3_LUNAR_ORBIT_NO_PDI_7);
 		break;
 	case MST_J3_LUNAR_ORBIT_NO_PDI_7: //LGC descent target update to LGC LM SV update
