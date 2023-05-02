@@ -406,7 +406,7 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_PRE_DOI_3: //PDI abort PAD to Lunar Surface PAD
 		UpdateMacro(UTP_PADONLY, PT_AP12PDIABORTPAD, SubStateTime > 3.0*60.0, 71, MST_J3_LUNAR_ORBIT_PRE_DOI_4);
 		break;
-	case MST_J3_LUNAR_ORBIT_PRE_DOI_4: //Lunar Surface PAD to No DOI-2 PAD
+	case MST_J3_LUNAR_ORBIT_PRE_DOI_4: //Lunar Surface PAD to CIRC burn update
 		UpdateMacro(UTP_PADONLY, PT_AP12LUNSURFPAD, SubStateTime > 3.0*60.0, 73, MST_J3_LUNAR_ORBIT_PRE_DOI_6);
 		break;
 	/*case MST_J3_LUNAR_ORBIT_PRE_DOI_5: //No DOI-2 PAD to CIRC burn update
@@ -445,11 +445,11 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_PRE_LANDING_3: //PDI Evaluation to landing confirmation or PDI-2 calulation
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->calcParams.tgt->GroundContact(), 78, MST_J3_LUNAR_ORBIT_POST_LANDING_1, scrubbed, SubStateTime > 10.0*60.0, MST_J3_LUNAR_ORBIT_NO_PDI_1);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_1: //PDI-2 calulation to No PDI+12-2 PAD
+	case MST_J3_LUNAR_ORBIT_NO_PDI_1: //PDI-2 calulation to No PDI2+12 PAD
 		UpdateMacro(UTP_NONE, PT_NONE, true, 133, MST_J3_LUNAR_ORBIT_NO_PDI_2);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_2: //No PDI+12-2 PAD to PDI-2 PAD
-		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADONLY, PT_AP11LMMNV*/, SubStateTime > 3.0*60.0, 134, MST_J3_LUNAR_ORBIT_NO_PDI_3);
+	case MST_J3_LUNAR_ORBIT_NO_PDI_2: //No PDI2+12 PAD PAD to PDI-2 PAD
+		UpdateMacro(UTP_PADONLY, PT_AP11LMMNV, SubStateTime > 3.0*60.0, 134, MST_J3_LUNAR_ORBIT_NO_PDI_3);
 		break;
 	case MST_J3_LUNAR_ORBIT_NO_PDI_3: //PDI-2 PAD to PDI-2 abort PAD
 		UpdateMacro(UTP_PADONLY, PT_AP11PDIPAD, SubStateTime > 3.0*60.0, 70, MST_J3_LUNAR_ORBIT_NO_PDI_4);

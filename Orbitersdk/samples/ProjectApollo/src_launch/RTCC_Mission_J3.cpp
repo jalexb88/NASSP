@@ -2158,7 +2158,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		svlm0 = StateVectorCalc(calcParams.tgt);
 
 		TIG = calcParams.PDI + 12.0*60.0;
-		dvx1 = dvx2 = 100.0;
+		dvx1 = dvx2 = 103.0;
 
 		svcsm1 = ExecuteManeuver(svcsm0, TimeofIgnition, DeltaV_LVLH, 0, RTCC_ENGINETYPE_CSMSPS);
 		svlm1 = ExecuteManeuver(svlm0, calcParams.TIGSTORE1, calcParams.DVSTORE1, 0, RTCC_ENGINETYPE_LMRCSMINUS4);
@@ -2173,14 +2173,15 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		coeopt.DH = 15.0*1852.0;
 		coeopt.E = 26.6*RAD;
-		coeopt.sv_A = ExecuteManeuver(svlm0, TIG, _V(dvx2, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
 		coeopt.sv_P = svcsm1;
 		coeopt.K_CDH = 0;
 		coeopt.t_CSI = TIG + 55.0*60.0;
 		coeopt.t_TPI = t_TPI;
 
-		//Find solution for no DOI-2 case
 		int n = 0, nmax = 100;
+
+		//Find solution for no DOI-2 case
+		coeopt.sv_A = ExecuteManeuver(svlm0, TIG, _V(dvx2, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
 		ConcentricRendezvousProcessor(coeopt, coeres);
 		DH = coeres.DH - coeopt.DH;
 		while (abs(DH) > 0.1*1852.0 && n < nmax)
@@ -2195,16 +2196,15 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			}
 
 			coeopt.sv_A = ExecuteManeuver(svlm0, TIG, _V(dvx2, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
-
 			ConcentricRendezvousProcessor(coeopt, coeres);
-
 			DH = coeres.DH - coeopt.DH;
 
 			n++;
 		}
 
-		//Find nominal solution (with DOI-2)
 		n = 0;
+
+		//Find nominal solution (with DOI-2)
 		coeopt.sv_A = ExecuteManeuver(svlm1, TIG, _V(dvx1, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
 		ConcentricRendezvousProcessor(coeopt, coeres);
 		DH = coeres.DH - coeopt.DH;
@@ -2220,9 +2220,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			}
 
 			coeopt.sv_A = ExecuteManeuver(svlm1, TIG, _V(dvx1, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
-
 			ConcentricRendezvousProcessor(coeopt, coeres);
-
 			DH = coeres.DH - coeopt.DH;
 
 			n++;
@@ -3132,9 +3130,86 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		CZTDTGTU.GETTD = PZLDPDIS.PD_GETTD;
 	}
 	break;
-	case 134: //No PDI+12-2 PAD
+	case 134: //No PDI2+12 PAD
 	{
+		AP11LMManPADOpt opt;
+		TwoImpulseResuls res;
+		SV svlm, svcsm, svman, svboost;
+		VECTOR3 dV_LVLH;
+		double P30TIG, t_sunrise, t_CSI, t_TPI, DH, TIG, dvx;
 
+		AP11LMMNV * form = (AP11LMMNV *)pad;
+
+		svcsm = StateVectorCalc(calcParams.src);
+		svlm = StateVectorCalc(calcParams.tgt);
+
+		TIG = calcParams.PDI + 12.0*60.0;
+		dvx = 116.0;
+
+		t_sunrise = calcParams.PDI + 5.0*3600.0;
+		t_TPI = FindOrbitalSunrise(svcsm, t_sunrise) - 16.0*60.0;
+		//Round to next 30 seconds
+		t_TPI = round(t_TPI / 30.0)*30.0;
+
+		svman = ExecuteManeuver(svlm, TIG, _V(dvx, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
+		svboost = ExecuteManeuver(svman, TIG + 1.0*3600.0, _V(10.0, 0.0, 0.0)*0.3048, 0, RTCC_ENGINETYPE_LMRCSPLUS4);
+
+		SPQOpt coeopt;
+		SPQResults coeres;
+
+		coeopt.DH = 15.0*1852.0;
+		coeopt.E = 26.6*RAD;
+		coeopt.sv_A = svboost;
+		coeopt.sv_P = svcsm;
+		coeopt.K_CDH = 0;
+		coeopt.t_CSI = TIG + 3.0*3600.0;
+		coeopt.t_TPI = t_TPI;
+
+		//Find solution
+		int n = 0, nmax = 100;
+		ConcentricRendezvousProcessor(coeopt, coeres);
+		DH = coeres.DH - coeopt.DH;
+		while (abs(DH) > 0.1*1852.0 && n < nmax)
+		{
+			if (DH > 0.0)
+			{
+				dvx -= 0.1;
+			}
+			else
+			{
+				dvx += 0.1;
+			}
+
+			svman = ExecuteManeuver(svlm, TIG, _V(dvx, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
+			svboost = ExecuteManeuver(svman, TIG + 1.0*3600.0, _V(10.0, 0.0, 0.0)*0.3048, 0, RTCC_ENGINETYPE_LMRCSPLUS4);
+
+			coeopt.sv_A = svboost;
+			ConcentricRendezvousProcessor(coeopt, coeres);
+			DH = coeres.DH - coeopt.DH;
+
+			n++;
+		}
+
+		PoweredFlightProcessor(svlm, TIG, RTCC_ENGINETYPE_LMDPS, 0.0, _V(dvx, 0.0, -50.0)*0.3048, true, P30TIG, dV_LVLH);
+		t_CSI = coeres.t_CSI;
+
+		opt.R_LLS = BZLAND.rad[RTCC_LMPOS_BEST];
+		opt.dV_LVLH = dV_LVLH;
+		opt.enginetype = RTCC_ENGINETYPE_LMDPS;
+		opt.HeadsUp = false;
+		opt.REFSMMAT = GetREFSMMATfromAGC(&mcc->lm->agc.vagc, false);
+		opt.TIG = P30TIG;
+		opt.vessel = calcParams.tgt;
+		opt.csmlmdocked = false;
+
+		double AGSTIG = P30TIG - GETfromGMT(GetAGSClockZero());
+
+		AP11LMManeuverPAD(&opt, *form);
+		sprintf(form->purpose, "No PDI +12 ABORT");
+		sprintf(form->remarks, "TIG 373: %+05.1f", AGSTIG / 60.0);
+		form->type = 1;
+		form->t_CSI = round(t_CSI);
+		form->t_TPI = round(t_TPI);
 	}
 	break;
 	case 135: //No DOI-2 PAD
