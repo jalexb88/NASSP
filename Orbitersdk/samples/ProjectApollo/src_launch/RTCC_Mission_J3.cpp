@@ -2033,7 +2033,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			}
 
 			//Updated landing site vector after processing landmark tracking data
-			BZLAND.rad[RTCC_LMPOS_BEST] = 936.543520518*1852.0;
+			BZLAND.rad[RTCC_LMPOS_BEST] = 937.08*1852.0;
 			BZLAND.lat[RTCC_LMPOS_BEST] = 20.164*RAD;
 			BZLAND.lng[RTCC_LMPOS_BEST] = 30.750*RAD;
 		}
@@ -2117,7 +2117,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		t_sunrise1 = calcParams.PDI + 3.0*3600.0;
 		t_sunrise2 = calcParams.PDI + 5.0*3600.0;
 
-		if (mcc->MoonRev >= 14)
+		if (mcc->MoonRev >= 13)
 		{
 			//PDI-2
 			t_TPI = FindOrbitalSunrise(sv1, t_sunrise2) - 16.0*60.0;

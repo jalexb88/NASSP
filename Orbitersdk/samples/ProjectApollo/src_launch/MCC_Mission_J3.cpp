@@ -359,7 +359,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADONLY, PT_AP11LMMNV, SubStateTime > 5.0*60.0, 38, MST_J3_LUNAR_ORBIT_PDI_DAY_3);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_3: //Abort constants to LGC activation update
-		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 5.0*60.0, 36, MST_J3_LUNAR_ORBIT_PDI_DAY_4);
+		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADWITHLGCUPLINK, PT_AP11AGSACT*/, SubStateTime > 5.0*60.0, 36, MST_J3_LUNAR_ORBIT_PDI_DAY_4);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_4: //LGC activation update to LGC clock sync elvaluation
 		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, true, 35, MST_J3_LUNAR_ORBIT_PDI_DAY_5);
@@ -445,35 +445,41 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_PRE_LANDING_3: //PDI Evaluation to landing confirmation or PDI-2 calulation
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->calcParams.tgt->GroundContact(), 78, MST_J3_LUNAR_ORBIT_POST_LANDING_1, scrubbed, SubStateTime > 10.0*60.0, MST_J3_LUNAR_ORBIT_NO_PDI_1);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_1: //PDI-2 calulation to Abort constants
+	case MST_J3_LUNAR_ORBIT_NO_PDI_1: //PDI-2 calulation to No PDI+12-2 PAD
 		UpdateMacro(UTP_NONE, PT_NONE, true, 133, MST_J3_LUNAR_ORBIT_NO_PDI_2);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_2: //Abort constants to No PDI+12-2 PAD
-		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 3.0*60.0, 36, MST_J3_LUNAR_ORBIT_NO_PDI_3);
+	case MST_J3_LUNAR_ORBIT_NO_PDI_2: //No PDI+12-2 PAD to PDI-2 PAD
+		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADONLY, PT_AP11LMMNV*/, SubStateTime > 3.0*60.0, 134, MST_J3_LUNAR_ORBIT_NO_PDI_3);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_3: //No PDI+12-2 PAD to PDI-2 PAD
-		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADONLY, PT_AP11LMMNV*/, SubStateTime > 3.0*60.0, 134, MST_J3_LUNAR_ORBIT_NO_PDI_4);
+	case MST_J3_LUNAR_ORBIT_NO_PDI_3: //PDI-2 PAD to PDI-2 abort PAD
+		UpdateMacro(UTP_PADONLY, PT_AP11PDIPAD, SubStateTime > 3.0*60.0, 70, MST_J3_LUNAR_ORBIT_NO_PDI_4);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_4: //PDI-2 PAD to PDI-2 abort PAD
-		UpdateMacro(UTP_PADONLY, PT_AP11PDIPAD, SubStateTime > 3.0*60.0, 70, MST_J3_LUNAR_ORBIT_NO_PDI_5);
+	case MST_J3_LUNAR_ORBIT_NO_PDI_4: //PDI-2 abort PAD to Lunar Surface PAD
+		UpdateMacro(UTP_PADONLY, PT_AP12PDIABORTPAD, SubStateTime > 3.0*60.0, 71, MST_J3_LUNAR_ORBIT_NO_PDI_5);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_5: //PDI-2 abort PAD to Lunar Surface PAD
-		UpdateMacro(UTP_PADONLY, PT_AP12PDIABORTPAD, SubStateTime > 3.0*60.0, 71, MST_J3_LUNAR_ORBIT_NO_PDI_6);
+	case MST_J3_LUNAR_ORBIT_NO_PDI_5: //Lunar Surface PAD to Abort constants
+		UpdateMacro(UTP_PADONLY, PT_AP12LUNSURFPAD, SubStateTime > 3.0*60.0, 73, MST_J3_LUNAR_ORBIT_NO_PDI_6);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_6: //Lunar Surface PAD to LGC descent target update
-		UpdateMacro(UTP_PADONLY, PT_AP12LUNSURFPAD, rtcc->GETEval2(rtcc->calcParams.PDI - 15.0*60.0), 73, MST_J3_LUNAR_ORBIT_NO_PDI_7);
+	case MST_J3_LUNAR_ORBIT_NO_PDI_6: //Abort constants to LGC descent target update
+		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADWITHLGCUPLINK, PT_AP11AGSACT*/, SubStateTime > 3.0*60.0, 36, MST_J3_LUNAR_ORBIT_NO_PDI_7);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_7: //LGC descent target update to LGC LM SV update (PDI-10)
+	case MST_J3_LUNAR_ORBIT_NO_PDI_7: //LGC descent target update to LGC LM SV update
 		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, true, 76, MST_J3_LUNAR_ORBIT_NO_PDI_8);
 		break;
-	case MST_J3_LUNAR_ORBIT_NO_PDI_8: //LGC LM SV update (PDI-10) to CMC pre PDI uplinks
+	case MST_J3_LUNAR_ORBIT_NO_PDI_8: //LGC LM SV update to LGC CSM SV update
+		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, true, 4, MST_J3_LUNAR_ORBIT_NO_PDI_9);
+		break;
+	case MST_J3_LUNAR_ORBIT_NO_PDI_9: //LGC CSM SV update to LGC LM SV update (PDI-10)
+		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 15.0*60.0), 3, MST_J3_LUNAR_ORBIT_NO_PDI_10);
+		break;
+	case MST_J3_LUNAR_ORBIT_NO_PDI_10: //LGC LM SV update (PDI-10) to CMC pre PDI uplinks
 		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, true, 136, MST_J3_LUNAR_ORBIT_PRE_LANDING_1);
 		break;
 	case MST_J3_LUNAR_ORBIT_POST_LANDING_1: //Landing confirmation to T1
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 15.0*60.0), 79, MST_J3_LUNAR_ORBIT_POST_LANDING_2);
 		break;
 	case MST_J3_LUNAR_ORBIT_POST_LANDING_2: //T1 to T2
-		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 19.0*60.0 + 30.0), 80, MST_J3_LUNAR_ORBIT_POST_LANDING_3);
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 21.0*60.0 + 30.0), 80, MST_J3_LUNAR_ORBIT_POST_LANDING_3);
 		break;
 	case MST_J3_LUNAR_ORBIT_POST_LANDING_3: //T2 to Landing Site Update
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 75.0*60.0), 81, MST_J3_LUNAR_ORBIT_POST_LANDING_3);
