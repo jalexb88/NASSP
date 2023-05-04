@@ -57,7 +57,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TLI + 18.0), 5, MST_J3_TRANSLUNAR1);
 		break;
 	case MST_J3_TRANSLUNAR1: //TLI Evaluation to SIVB Evasive Maneuver
-		UpdateMacro(UTP_NONE, PT_NONE, true, 15, MST_J3_TRANSLUNAR2, scrubbed, rtcc->GETEval2(3.0*3600.0), MST_J3_EPO1);
+		UpdateMacro(UTP_NONE, PT_NONE, true, 15, MST_J3_TRANSLUNAR2, scrubbed, rtcc->GETEval2(4.0*3600.0), MST_J3_EPO1);
 		break;
 	case MST_J3_TRANSLUNAR2:
 		switch (SubState) {
@@ -409,9 +409,6 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_PRE_DOI_4: //Lunar Surface PAD to CIRC burn update
 		UpdateMacro(UTP_PADONLY, PT_AP12LUNSURFPAD, SubStateTime > 3.0*60.0, 73, MST_J3_LUNAR_ORBIT_PRE_DOI_6);
 		break;
-	/*case MST_J3_LUNAR_ORBIT_PRE_DOI_5: //No DOI-2 PAD to CIRC burn update
-		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 3.0*60.0, 135, MST_J3_LUNAR_ORBIT_PRE_DOI_6);
-		break;*/
 	case MST_J3_LUNAR_ORBIT_PRE_DOI_6: //CIRC burn update to P24 track PAD (LDMK RP-3)
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 3.0*60.0, 40, MST_J3_LUNAR_ORBIT_PRE_DOI_7);
 		break;
@@ -481,19 +478,34 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_POST_LANDING_2: //T1 to T2
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 21.0*60.0 + 30.0), 80, MST_J3_LUNAR_ORBIT_POST_LANDING_3);
 		break;
-	case MST_J3_LUNAR_ORBIT_POST_LANDING_3: //T2 to Landing Site Update
-		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 75.0*60.0), 81, MST_J3_LUNAR_ORBIT_POST_LANDING_3);
+	case MST_J3_LUNAR_ORBIT_POST_LANDING_3: //T2 to Photo PAD (114:10)
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 34.0*60.0), 81, MST_J3_LUNAR_ORBIT_POST_LANDING_4);
 		break;
-	/*case MST_J3_LUNAR_ORBIT_POST_LANDING_4: //Landing Site Update to CSM SV update
-		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, SubStateTime > 8.0*60.0, 74, MST_J3_LUNAR_ORBIT_POST_LANDING_5);
+	case MST_J3_LUNAR_ORBIT_POST_LANDING_4: //Photo PAD (114:10) to T3
+		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 3.0*60.0, 152, MST_J3_LUNAR_ORBIT_POST_LANDING_5);
 		break;
-	case MST_J3_LUNAR_ORBIT_POST_LANDING_5: //CSM SV update to Lmk 193 Landmark Tracking PAD
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, SubStateTime > 3.0*60.0, 1, MST_J3_LUNAR_ORBIT_POST_LANDING_6);
+	case MST_J3_LUNAR_ORBIT_POST_LANDING_5: //T3 to Liftoff times REVS 15-20
+		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 15.0*60.0, 82, MST_J3_LUNAR_ORBIT_POST_LANDING_6);
 		break;
-	case MST_J3_LUNAR_ORBIT_POST_LANDING_6: //Lmk 193 Landmark Tracking PAD to DAP Load
-		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, rtcc->GETEval2(rtcc->calcParams.PDI + 2.0*3600.0 + 10.0*60.0), 63, MST_J3_LUNAR_ORBIT_POST_LANDING_7);
+	case MST_J3_LUNAR_ORBIT_POST_LANDING_6: //Liftoff times REV 15-20 to Photo PAD (116:20)
+		UpdateMacro(UTP_PADONLY, PT_LIFTOFFTIMES, MoonRev >= 14 && MoonRevTime > 40.0*60.0, 85, MST_J3_LUNAR_ORBIT_POST_LANDING_7);
 		break;
-	case MST_J3_LUNAR_ORBIT_POST_LANDING_7: //DAP Load to Liftoff Times Update 1
+	case MST_J3_LUNAR_ORBIT_POST_LANDING_7: //Photo PAD (116:20) to TEI-26 update
+		UpdateMacro(UTP_NONE, PT_NONE, MoonRev >= 16 && MoonRevTime > 40.0*60.0, 153, MST_J3_LUNAR_ORBIT_EVA_DAY_1);
+		break;
+	case MST_J3_LUNAR_ORBIT_EVA_DAY_1: //TEI-26 update Earthshine photo PAD (121:05)
+		UpdateMacro(UTP_PADONLY, PT_AP11MNV, SubStateTime > 5.0*60.0, 45, MST_J3_LUNAR_ORBIT_EVA_DAY_2);
+		break;
+	case MST_J3_LUNAR_ORBIT_EVA_DAY_2: //Earthshine photo PAD (121:05) to Liftoff times REVS 21-25
+		UpdateMacro(UTP_NONE, PT_NONE, MoonRev >= 20 && MoonRevTime > 5.0*60.0, 154, MST_J3_LUNAR_ORBIT_EVA_DAY_3);
+		break;
+	case MST_J3_LUNAR_ORBIT_EVA_DAY_3: //Liftoff times REVS 21-25 to LGC CSM SV update (155:15)
+		UpdateMacro(UTP_PADONLY, PT_LIFTOFFTIMES, MoonRev >= 20 && MoonRevTime > 95.0*60.0, 86, MST_J3_LUNAR_ORBIT_EVA_DAY_4);
+		break;
+	case MST_J3_LUNAR_ORBIT_EVA_DAY_4: //LGC CSM SV update (155:15) to XXX
+		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, MoonRev >= 23 && MoonRevTime > 90.0*60.0, 3, MST_J3_LUNAR_ORBIT_EVA_DAY_5);
+		break;
+	/*case MST_J3_LUNAR_ORBIT_POST_LANDING_7: //DAP Load to Liftoff Times Update 1
 		UpdateMacro(UTP_PADONLY, PT_AP10DAPDATA, SubStateTime > 3.0*60.0, 8, MST_J3_LUNAR_ORBIT_POST_LANDING_8);
 		break;
 	case MST_J3_LUNAR_ORBIT_POST_LANDING_8: //Liftoff Times Update 1 to LM Tracking PAD

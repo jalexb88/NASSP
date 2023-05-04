@@ -1686,8 +1686,9 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 		else if (fcn == 45)
 		{
-			sprintf(manname, "TEI-39");
-			MoonRevTEI = 38.63;
+			sprintf(manname, "TEI-26");
+			MoonRevTEI = 25.5;
+			returnspeed = 0;
 		}
 		else if (fcn == 46)
 		{
@@ -1823,7 +1824,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		{
 			sprintf(form->remarks, "%s,\nUndocked, assumes CIRC", form->remarks);
 		}
-		else if (fcn == 45)
+		else if (fcn == 48)
 		{
 			sprintf(form->remarks, "%s,\nAssumes no PC-2", form->remarks);
 		}
@@ -2183,21 +2184,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		//Find solution for no DOI-2 case
 		coeopt.sv_A = ExecuteManeuver(svlm0, TIG, _V(dvx2, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
 		ConcentricRendezvousProcessor(coeopt, coeres);
-		DH = coeres.DH - coeopt.DH;
+		DH = coeopt.DH - coeres.DH;
 		while (abs(DH) > 0.1*1852.0 && n < nmax)
 		{
-			if (DH > 0.0)
-			{
-				dvx2 -= 0.1;
-			}
-			else
-			{
-				dvx2 += 0.1;
-			}
+			dvx2 += DH/ (abs(DH) * 10.0);
 
 			coeopt.sv_A = ExecuteManeuver(svlm0, TIG, _V(dvx2, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
 			ConcentricRendezvousProcessor(coeopt, coeres);
-			DH = coeres.DH - coeopt.DH;
+			DH = coeopt.DH - coeres.DH;
 
 			n++;
 		}
@@ -2207,21 +2201,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		//Find nominal solution (with DOI-2)
 		coeopt.sv_A = ExecuteManeuver(svlm1, TIG, _V(dvx1, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
 		ConcentricRendezvousProcessor(coeopt, coeres);
-		DH = coeres.DH - coeopt.DH;
+		DH = coeopt.DH - coeres.DH;
 		while (abs(DH) > 0.1*1852.0 && n < nmax)
 		{
-			if (DH > 0.0)
-			{
-				dvx1 -= 0.1;
-			}
-			else
-			{
-				dvx1 += 0.1;
-			}
+			dvx1 += DH / (abs(DH) * 10.0);
 
 			coeopt.sv_A = ExecuteManeuver(svlm1, TIG, _V(dvx1, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
 			ConcentricRendezvousProcessor(coeopt, coeres);
-			DH = coeres.DH - coeopt.DH;
+			DH = coeopt.DH - coeres.DH;
 
 			n++;
 		}
@@ -2420,13 +2407,18 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 81: //STAY FOR T2
 	{
 		sprintf(upMessage, "Stay for T2");
+	}
+	break;
+	case 82: //STAY FOR T3
+	{
+		sprintf(upMessage, "Stay for T3. IMU parking angles: +295.86, +000.00, +084.14");
 
 		//Update landing site
 		calcParams.tgt->GetEquPos(BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
 	}
 	break;
-	case 85: //LIFTOFF TIME UPDATE REV 16 THRU 19
-	case 86: //LIFTOFF TIME UPDATE REV 20 THRU 24
+	case 85: //LIFTOFF TIME UPDATE REV 15 THRU 20
+	case 86: //LIFTOFF TIME UPDATE REV 21 THRU 25
 	case 87: //LIFTOFF TIME UPDATE REV 25 THRU 28
 	case 88: //LIFTOFF TIME UPDATE REV 29 & 30
 	{
@@ -2475,17 +2467,17 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.theta_1 = 9.9588*RAD;
 		opt.dt_1 = 447.0;
 
-		if (fcn == 85)
+		if (fcn == 85) //LIFTOFF TIME UPDATE REVS 15 THRU 20
 		{
-			t_TPI_guess = GET_CSM + 5.0*3600.0;
-			form->entries = 4;
-			form->startdigit = 4;
+			t_TPI_guess = GET_CSM + 6.0*3600.0;
+			form->entries = 6;
+			form->startdigit = mcc->MoonRev + 2; //REV 15
 		}
-		else if (fcn == 86)
+		else if (fcn == 86) //LIFTOFF TIME UPDATE REV 21 THRU 25
 		{
 			t_TPI_guess = GET_CSM + 5.5*3600.0;
 			form->entries = 5;
-			form->startdigit = 8;
+			form->startdigit = mcc->MoonRev + 1; //REV 21
 		}
 		else if (fcn == 87)
 		{
@@ -2503,7 +2495,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		R_LS = OrbMech::r_from_latlong(BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
 
 		double t_TPI;
-		t_TPI = FindOrbitalSunrise(sv_CSM, t_TPI_guess) - 23.0*60.0;
+		t_TPI = FindOrbitalSunrise(sv_CSM, t_TPI_guess) - 16.0*60.0;
 		//Round to next 30 seconds
 		t_TPI = round(t_TPI / 30.0)*30.0;
 		opt.t_hole = GMTfromGET(t_TPI);
@@ -2521,7 +2513,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			form->TIG[i] = PZLRPT.data[1].GETLO;
 
 			t_TPI_guess += 2.0*3600.0;
-			t_TPI = FindOrbitalSunrise(sv_CSM, t_TPI_guess) - 23.0*60.0;
+			t_TPI = FindOrbitalSunrise(sv_CSM, t_TPI_guess) - 16.0*60.0;
 			//Round to next 30 seconds
 			t_TPI = round(t_TPI / 30.0)*30.0;
 			opt.t_hole = GMTfromGET(t_TPI);
@@ -2665,7 +2657,72 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 	}
 	break;
-	case 100: //NOMINAL INSERTION TARGET + CMC LM SV UPDATE
+	case 100: //NOMINAL INSERTION TARGET (DIRECT ASCENT RENDEZVOUS)
+	{
+		LLTPOpt opt;
+
+		SV sv_CSM, sv_LM_upl, sv_Ins, sv_IG;
+		EphemerisData sv_CSM_e;
+
+		VECTOR3 R_LS;
+
+		double m0, theta_1, dt_1, dv, t_TPI_guess, t_TPI;
+
+		sv_CSM = StateVectorCalc(calcParams.src);
+		sv_CSM_e = StateVectorCalcEphem(calcParams.src);
+
+		LEM *l = (LEM*)calcParams.tgt;
+		m0 = l->GetAscentStageMass();
+
+		//Rev 50 is the nominal for this update. Nominal TPI time is about 76.12 hours after PDI
+		t_TPI_guess = calcParams.PDI + 76.12*3600.0 + 16.0*60.0 + 2.0*3600.0*(double)(mcc->MoonRev - 50);
+		t_TPI = FindOrbitalSunrise(sv_CSM, t_TPI_guess) - 16.0*60.0;
+		//Round to next 30 seconds
+		t_TPI = round(t_TPI / 30.0)*30.0;
+
+		//Set all the options
+		opt.sv_CSM = sv_CSM_e;
+		opt.Y_S = PZLTRT.YawSteerCap;
+		opt.V_Z_NOM = 32.0*0.3048;
+		opt.T_TH = GMTfromGET(t_TPI - 1.0*3600.0);
+		opt.R_LS = BZLAND.rad[RTCC_LMPOS_BEST];
+		opt.lat_LS = BZLAND.lat[RTCC_LMPOS_BEST];
+		opt.lng_LS = BZLAND.lng[RTCC_LMPOS_BEST];
+		opt.alpha_PF = PZLTRT.PoweredFlightArc;
+		opt.dt_PF = PZLTRT.PoweredFlightTime;
+		opt.dt_INS_TPI = PZLTRT.DT_Ins_TPI;
+		opt.h_INS = PZLTRT.InsertionHeight;
+		opt.DH_TPI = PZLTRT.DT_DH;
+		opt.dTheta_TPI = PZLTRT.DT_Theta_i;
+		opt.WT = PZLTRT.TerminalPhaseTravelAngle;
+
+		R_LS = OrbMech::r_from_latlong(BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
+
+		//Initial direct ascent calculation
+		LunarLiftoffTimePredictionDT(opt, PZLLTT);
+		LunarAscentProcessor(R_LS, m0, sv_CSM, PZLLTT.GETLOR, PZLLTT.VH, opt.V_Z_NOM, theta_1, dt_1, dv, sv_IG, sv_Ins);
+		opt.alpha_PF = theta_1;
+		opt.dt_PF = dt_1;
+		LunarLiftoffTimePredictionDT(opt, PZLLTT);
+
+		//Iterate DT to find correct TPI time
+		int n = 0, nmax = 100;
+		double TPI_diff = t_TPI - PZLLTT.GET_TPI;
+		while (abs(TPI_diff) > 20.0 && n < nmax)
+		{
+			opt.dt_INS_TPI += ((TPI_diff / abs(TPI_diff * 10.0)) * 1852.0);
+			LunarLiftoffTimePredictionDT(opt, PZLLTT);
+			TPI_diff = t_TPI - PZLLTT.GET_TPI;
+			n++;
+		}
+
+		calcParams.LunarLiftoff = PZLLTT.GETLOR;
+		calcParams.Insertion = OrbMech::GETfromMJD(sv_Ins.MJD, CalcGETBase());
+		calcParams.TPI = PZLLTT.GET_TPI;
+		DeltaV_LVLH = _V(PZLLTT.VH, opt.V_Z_NOM, 0);
+	}
+	break;
+	case 101: //COELLIPTIC RENDEZVOUS TARGET
 	{
 		LunarLiftoffTimeOpt opt;
 		REFSMMATOpt refsopt;
@@ -2680,9 +2737,9 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		LEM *l = (LEM*)calcParams.tgt;
 		m0 = l->GetAscentStageMass();
 
-		//Rev 29 is the nominal for this update. Nominal TPI time is about 34.25 hours after PDI
-		t_TPI_guess = calcParams.PDI + 34.25*3600.0 + 23.0*60.0 + 2.0*3600.0*(double)(mcc->MoonRev - 29);
-		t_TPI = FindOrbitalSunrise(sv_CSM, t_TPI_guess) - 23.0*60.0;
+		//One rev after direct ascent TPI
+		t_TPI_guess = calcParams.TPI + 2.0*3600.0;
+		t_TPI = FindOrbitalSunrise(sv_CSM, t_TPI_guess) - 16.0*60.0;
 		//Round to next 30 seconds
 		t_TPI = round(t_TPI / 30.0)*30.0;
 
@@ -2773,8 +2830,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 	}
 	break;
-	case 101: //CMC INSERTION STATE VECTORS
-	case 102: //LGC CSM STATE VECTORS + RLS
+	case 102: //CMC INSERTION STATE VECTORS
+	case 103: //LGC CSM STATE VECTORS + RLS
 	{
 		SV sv_LM_upl, sv_CSM, sv_CSM_upl;
 		char buffer1[100], buffer2[100];
@@ -2810,7 +2867,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 	}
 	break;
-	case 105: //NOMINAL LM ASCENT PAD
+	case 104: //NOMINAL LM ASCENT PAD
 	{
 		AP12LMASCPAD * form = (AP12LMASCPAD*)pad;
 
@@ -2889,7 +2946,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->DEDA225_226 = SMa / 0.3048 / 100.0;
 		form->DEDA231 = length(R_LS) / 0.3048 / 100.0;
 		form->DEDA465 = v_LV / 0.3048;
-		form->TIG_2 = TimeofIgnition;
+		form->TIG_2 = calcParams.TPI;
 		form->LMWeight = m0 / 0.45359237;
 		form->CSMWeight = m1 / 0.45359237;
 		sprintf(form->remarks, "K-Factor is %d:%02d:%05.2f", hh, mm, ss);
@@ -3159,33 +3216,27 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		coeopt.DH = 15.0*1852.0;
 		coeopt.E = 26.6*RAD;
-		coeopt.sv_A = svboost;
 		coeopt.sv_P = svcsm;
 		coeopt.K_CDH = 0;
 		coeopt.t_CSI = TIG + 3.0*3600.0;
 		coeopt.t_TPI = t_TPI;
 
-		//Find solution
 		int n = 0, nmax = 100;
+
+		//Find solution
+		coeopt.sv_A = svboost;
 		ConcentricRendezvousProcessor(coeopt, coeres);
-		DH = coeres.DH - coeopt.DH;
+		DH = coeopt.DH - coeres.DH;
 		while (abs(DH) > 0.1*1852.0 && n < nmax)
 		{
-			if (DH > 0.0)
-			{
-				dvx -= 0.1;
-			}
-			else
-			{
-				dvx += 0.1;
-			}
+			dvx += DH / (abs(DH) * 10.0);
 
 			svman = ExecuteManeuver(svlm, TIG, _V(dvx, 0.0, -50.0)*0.3048, 0, RTCC_ENGINETYPE_LMDPS);
 			svboost = ExecuteManeuver(svman, TIG + 1.0*3600.0, _V(10.0, 0.0, 0.0)*0.3048, 0, RTCC_ENGINETYPE_LMRCSPLUS4);
 
 			coeopt.sv_A = svboost;
 			ConcentricRendezvousProcessor(coeopt, coeres);
-			DH = coeres.DH - coeopt.DH;
+			DH = coeopt.DH - coeres.DH;
 
 			n++;
 		}
@@ -3210,11 +3261,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->type = 1;
 		form->t_CSI = round(t_CSI);
 		form->t_TPI = round(t_TPI);
-	}
-	break;
-	case 135: //No DOI-2 PAD
-	{
-
 	}
 	break;
 	case 136: //LGC LM SV update (PDI-10)
@@ -3260,6 +3306,24 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			// give to mcc
 			strncpy(upString, uplinkdata, 1024 * 3);
 			sprintf(upDesc, "CSM SV (P24 T2 ACQ), LM SV (PDI-10)");
+		}
+	}
+	break;
+	case 138: //LGC CSM SV update (155:15)
+	{
+		EphemerisData sv0, sv1;
+		char buffer1[1000];
+
+		sv0 = StateVectorCalcEphem(calcParams.src);
+		sv1 = coast(sv0, OrbMech::HHMMSSToSS(155, 15, 0) - GETfromGMT(sv0.GMT));
+
+		AGCStateVectorUpdate(buffer1, RTCC_MPT_LM, RTCC_MPT_CSM, sv1);
+
+		sprintf(uplinkdata, "%s", buffer1);
+		if (upString != NULL) {
+			// give to mcc
+			strncpy(upString, uplinkdata, 1024 * 3);
+			sprintf(upDesc, "CSM state vector (155:15)");
 		}
 	}
 	break;
@@ -3496,11 +3560,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 150: //Pan camera photo PAD (90:45)
 	case 151: //Pan camera photo PAD (91:20)
+	case 152: //Pan camera photo PAD (114:10)
+	case 153: //Pan camera photo PAD (116:20)
+	case 154: //Earthshine photo PAD (121:05)
 	{
 		double MJD;
 		OBJHANDLE gravref;
 		double GET1, GET2;
-		EphemerisData sv1;
+		EphemerisData sv1, sv2;
 		int padtype = 0; //Times relative to:  0 = longitude (1 entry), 1 = longitude (2 entries), 2 = SR, 3 = SS, 4 = SR & SS
 
 		int hh1, hh2, mm1, mm2 = 0;
@@ -3509,9 +3576,10 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		char purpose[128];
 
 		sv1 = StateVectorCalcEphem(calcParams.src);
+		sv2 = coast(sv1, 1.0*3600.0);
 
-		MJD = OrbMech::MJDfromGET(sv1.GMT, GetGMTBase());
-		gravref = GetGravref(sv1.RBI);
+		MJD = OrbMech::MJDfromGET(sv2.GMT, GetGMTBase());
+		gravref = GetGravref(sv2.RBI);
 
 		double lng1, lng2, dt = 0.0;
 
@@ -3529,6 +3597,25 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			lng1 = 123.0*RAD;
 			lng2 = 95.0*RAD;
 		}
+		else if (fcn == 152) //Pan camera photo PAD (114:10)
+		{
+			sprintf(purpose, "PAN CAMERA PHOTO PAD");
+			padtype = 1;
+			lng1 = -172.0*RAD;
+			lng2 = 100.0*RAD;
+		}
+		else if (fcn == 153) //Pan camera photo PAD (116:20)
+		{
+			sprintf(purpose, "PAN CAMERA PHOTO PAD");
+			padtype = 1;
+			lng1 = 102.0*RAD;
+			lng2 = 14.0*RAD;
+		}
+		else if (fcn == 154) //Earthshine photo PAD (121:05)
+		{
+			sprintf(purpose, "EARTHSHINE PHOTO PAD");
+			padtype = 3;
+		}
 		else
 		{
 			sprintf(purpose, "PAN CAMERA PHOTO PAD");
@@ -3538,11 +3625,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		{
 			double t_lng, ttoLNG;
 
-			t_lng = OrbMech::P29TimeOfLongitude(sv1.R, sv1.V, MJD, gravref, lng1);
+			t_lng = OrbMech::P29TimeOfLongitude(sv2.R, sv2.V, MJD, gravref, lng1);
 			ttoLNG = (t_lng - MJD)*24.0 * 3600.0;
 			GET1 = (MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 
-			t_lng = OrbMech::P29TimeOfLongitude(sv1.R, sv1.V, MJD, gravref, lng2);
+			t_lng = OrbMech::P29TimeOfLongitude(sv2.R, sv2.V, MJD, gravref, lng2);
 			ttoLNG = (t_lng - MJD)*24.0 * 3600.0;
 			GET2 = (MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 
@@ -3551,11 +3638,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			if (padtype < 1) //time over 1 longitude
 			{
-				sprintf(upMessage, "%s\nT-START: %d:%d:%.2lf", purpose, hh1, mm1, ss1);
+				sprintf(upMessage, "%s\nT-START: %03d:%02d:%2.0lf", purpose, hh1, mm1, ss1);
 			}
 			else //time over 2 longitudes
 			{
-				sprintf(upMessage, "%s\nT-START: %d:%d:%.2lf\nT-STOP: %d:%d:%.2lf", purpose, hh1, mm1, ss1, hh2, mm2, ss2);
+				sprintf(upMessage, "%s\nT-START: %03d:%02d:%2.0lf\nT-STOP: %03d:%02d:%2.0lf", purpose, hh1, mm1, ss1, hh2, mm2, ss2);
 			}
 		}
 		else
@@ -3564,8 +3651,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			OBJHANDLE hSun = oapiGetObjectByName("Sun");
 
-			ttoSR = OrbMech::sunrise(sv1.R, sv1.V, MJD, gravref, hSun, 1, 0, true);
-			ttoSS = OrbMech::sunrise(sv1.R, sv1.V, MJD, gravref, hSun, 0, 0, true);
+			ttoSR = OrbMech::sunrise(sv2.R, sv2.V, MJD, gravref, hSun, 1, 0, true);
+			ttoSS = OrbMech::sunrise(sv2.R, sv2.V, MJD, gravref, hSun, 0, 0, true);
 
 			GET1 = (MJD - CalcGETBase())*24.0*3600.0 + ttoSR;
 			GET2 = (MJD - CalcGETBase())*24.0*3600.0 + ttoSS;
@@ -3574,19 +3661,19 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			{
 				GET1 += dt;
 				OrbMech::SStoHHMMSS(GET1, hh1, mm1, ss1);
-				sprintf(upMessage, "%s\nT-START: %d:%d:%.2lf", purpose, hh1, mm1, ss1);
+				sprintf(upMessage, "%s\nT-START: %03d:%02d:%2.0lf", purpose, hh1, mm1, ss1);
 			}
 			else if (padtype < 4) //relative to SS
 			{
 				GET2 += dt;
 				OrbMech::SStoHHMMSS(GET2, hh1, mm1, ss1);
-				sprintf(upMessage, "%s\nT-START: %d:%d:%.2lf", purpose, hh1, mm1, ss1);
+				sprintf(upMessage, "%s\nT-START: %03d:%02d:%2.0lf", purpose, hh1, mm1, ss1);
 			}
 			else //SR to SS
 			{
 				OrbMech::SStoHHMMSS(GET1, hh1, mm1, ss1);
 				OrbMech::SStoHHMMSS(GET2, hh2, mm2, ss2);
-				sprintf(upMessage, "%s\nT-START: %d:%d:%.2lf\nT-STOP: %d:%d:%.2lf", purpose, hh1, mm1, ss1, hh2, mm2, ss2);
+				sprintf(upMessage, "%s\nT-START: %03d:%02d:%2.0lf\nT-STOP: %03d:%02d:%2.0lf", purpose, hh1, mm1, ss1, hh2, mm2, ss2);
 			}
 		}
 	}
