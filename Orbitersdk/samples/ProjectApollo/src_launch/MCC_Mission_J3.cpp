@@ -553,7 +553,7 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_EVA_DAY_20: //Lunar sounder PAD (166:40) to CMC CSM SV update
 		UpdateMacro(UTP_NONE, PT_NONE, MoonRev >= 42 && MoonRevTime > 60.0*60.0, 162, MST_J3_LUNAR_ORBIT_EVA_DAY_21);
 		break;
-	case MST_J3_LUNAR_ORBIT_EVA_DAY_21: //CMC CSM SV update (166:40) to Liftoff time calculation
+	case MST_J3_LUNAR_ORBIT_EVA_DAY_21: //CMC CSM SV update to Liftoff time calculation
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 1, MST_J3_LUNAR_ORBIT_EVA_DAY_22);
 		break;
 	case MST_J3_LUNAR_ORBIT_EVA_DAY_22: //Liftoff time calculation to Plane change calculation
@@ -571,20 +571,107 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_1: //LOPC update to Nominal liftoff calculation
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, rtcc->GETEval2(rtcc->TimeofIgnition + 5.0*60.0), 95, MST_J3_LUNAR_ORBIT_ASCENT_DAY_2);
 		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_2: //Nominal liftoff calculation to CMC Liftoff REFSMMAT uplink
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_2: //Nominal liftoff calculation to CMC RLS uplink
 		UpdateMacro(UTP_NONE, PT_NONE, true, 100, MST_J3_LUNAR_ORBIT_ASCENT_DAY_3);
 		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_3: //CMC Liftoff REFSMMAT uplink to CMC RLS uplink
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 96, MST_J3_LUNAR_ORBIT_ASCENT_DAY_4);
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_3: //CMC RLS uplink to CMC Liftoff REFSMMAT uplink
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 74, MST_J3_LUNAR_ORBIT_ASCENT_DAY_4);
 		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_4: //CMC RLS uplink to CMC Pan camera photo PAD (183:45)
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, SubStateTime > 10.0*60.0, 74, MST_J3_LUNAR_ORBIT_ASCENT_DAY_5);
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_4: //CMC Liftoff REFSMMAT uplink to Pan camera photo PAD (183:45)
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, SubStateTime > 10.0*60.0, 96, MST_J3_LUNAR_ORBIT_ASCENT_DAY_5);
 		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_5: //Pan camera photo PAD (183:45) to XXX
-		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 5.0*60.0, 163, MST_J3_LUNAR_ORBIT_ASCENT_DAY_6);
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_5: //Pan camera photo PAD (183:45) to CMC CSM SV update
+		UpdateMacro(UTP_NONE, PT_NONE, MoonRev >= 49 && MoonRevTime > 35.0*60.0, 163, MST_J3_LUNAR_ORBIT_ASCENT_DAY_6);
 		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_6: //ASCENT PAD TEST
-		UpdateMacro(UTP_PADONLY, PT_AP12LMASCPAD, SubStateTime > 60.0*60.0, 104, MST_J3_LUNAR_ORBIT_ASCENT_DAY_7);
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_6: //CMC CSM SV update to P57 Liftoff time
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, SubStateTime > 10.0*60.0, 1, MST_J3_LUNAR_ORBIT_ASCENT_DAY_7);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_7: //P57 Liftoff time to P22 Acq time
+		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 3.0*60.0, 98, MST_J3_LUNAR_ORBIT_ASCENT_DAY_8);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_8: //P22 Acq time to LGC CSM SV update
+		UpdateMacro(UTP_PADONLY, PT_LMP22ACQPAD, SubStateTime > 3.0*60.0, 59, MST_J3_LUNAR_ORBIT_ASCENT_DAY_9);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_9: //LGC CSM SV update to LGC RLS update
+		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, true, 3, MST_J3_LUNAR_ORBIT_ASCENT_DAY_10);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_10: //LGC RLS update to Zodiacal light photo PAD
+		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, MoonRev >= 49 && MoonRevTime > 70.0*60.0, 75, MST_J3_LUNAR_ORBIT_ASCENT_DAY_11);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_11: //Zodiacal light photo PAD to P24 track PADS (F-1 & 17-1)
+		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 3.0*60.0, 164, MST_J3_LUNAR_ORBIT_ASCENT_DAY_12);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_12: //P24 track PADS (F-1 & 17-1) to RTCC Liftoff time update
+		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, MoonRev >= 50 && MoonRevTime > 40.0*60.0, 66, MST_J3_LUNAR_ORBIT_ASCENT_DAY_13);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_13: //RTCC Liftoff time update to Direct liftoff calculation
+		UpdateMacro(UTP_NONE, PT_NONE, true, 145, MST_J3_LUNAR_ORBIT_ASCENT_DAY_14);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_14: //Direct liftoff calculation to Ascent PAD (direct)
+		UpdateMacro(UTP_NONE, PT_NONE, true, 100, MST_J3_LUNAR_ORBIT_ASCENT_DAY_15);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_15: //Ascent PAD (direct) to Coelliptic liftoff calculation
+		UpdateMacro(UTP_PADONLY, PT_AP12LMASCPAD, SubStateTime > 5.0*60.0, 104, MST_J3_LUNAR_ORBIT_ASCENT_DAY_16);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_16: //Coelliptic liftoff calculation to Ascent PAD (coelliptic)
+		UpdateMacro(UTP_NONE, PT_NONE, true, 101, MST_J3_LUNAR_ORBIT_ASCENT_DAY_17);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_17: //Ascent PAD (coelliptic) to CSI PAD
+		UpdateMacro(UTP_PADONLY, PT_AP12LMASCPAD, SubStateTime > 5.0*60.0, 104, MST_J3_LUNAR_ORBIT_ASCENT_DAY_18);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_18: //CSI PAD to CMC insertion state vectors
+		UpdateMacro(UTP_PADONLY, PT_AP10CSI, SubStateTime > 15.0*60.0, 106, MST_J3_LUNAR_ORBIT_ASCENT_DAY_19);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_19: //CMC insertion state vectors to CSM DAP DATA
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 102, MST_J3_LUNAR_ORBIT_ASCENT_DAY_20);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_20: //CSM DAP DATA to LGC CSM state vector + RLS
+		UpdateMacro(UTP_PADONLY, PT_AP10DAPDATA, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff - 47.0*60.0), 7, MST_J3_LUNAR_ORBIT_ASCENT_DAY_21);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_21: //LGC CSM state vector + RLS to AGS K-factor
+		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, SubStateTime > 13.0*60.0, 103, MST_J3_LUNAR_ORBIT_ASCENT_DAY_22);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_22: //AGS K-factor + RLS to Ascent determination
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff + 10.0), 55, MST_J3_LUNAR_ORBIT_ASCENT_DAY_23);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_23: //Ascent determination to LM Liftoff Evaluation
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.Insertion + 30.0), 108, MST_J3_LUNAR_ORBIT_ASCENT_DAY_24, scrubbed, rtcc->GETEval2(rtcc->calcParams.Insertion + 30.0), MST_J3_LUNAR_ORBIT_ASCENT_COELLIPTIC_1);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_24: //LM Liftoff Evaluation to Tweak burn or Ascent recycle
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.Insertion + 60.0), 107, MST_J3_LUNAR_ORBIT_ASCENT_DAY_25, scrubbed, SubStateTime > 15.0*60.0, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_1);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_25: //Tweak burn to CMC LM SV update
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TPI - 38.0*60.0), 109, MST_J3_LUNAR_ORBIT_ASCENT_DAY_26);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_26: //CMC LM SV update to XXX
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TPI + 3.0*3600.0 + 3.0), 2, MST_J3_LUNAR_ORBIT_POST_DOCKING_1);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_COELLIPTIC_1: //LM Liftoff Evaluation (coelliptic timeline) to CMC LM SV update or Ascent recycle
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.Insertion + 7.0*60.0), 107, MST_J3_LUNAR_ORBIT_ASCENT_DAY_26, scrubbed, SubStateTime > 15.0*60.0, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_1);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_1: //Liftoff time calculation to Direct liftoff calculation
+		UpdateMacro(UTP_NONE, PT_NONE, true, 99, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_2);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_2: //Direct liftoff calculation to Ascent PAD (direct)
+		UpdateMacro(UTP_NONE, PT_NONE, true, 100, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_3);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_3: //Ascent PAD (direct) to Coelliptic liftoff calculation
+		UpdateMacro(UTP_PADONLY, PT_AP12LMASCPAD, SubStateTime > 5.0*60.0, 104, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_4);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_4: //Coelliptic liftoff calculation to Ascent PAD (coelliptic)
+		UpdateMacro(UTP_NONE, PT_NONE, true, 101, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_5);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_5: //Ascent PAD (coelliptic) to CSI PAD
+		UpdateMacro(UTP_PADONLY, PT_AP12LMASCPAD, SubStateTime > 5.0*60.0, 104, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_6);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_6: //CSI PAD to CMC insertion state vectors
+		UpdateMacro(UTP_PADONLY, PT_AP10CSI, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff - 50.0*60.0), 106, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_7);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_7: //CMC insertion state vectors to LGC CSM state vector + RLS
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 102, MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_8);
+		break;
+	case MST_J3_LUNAR_ORBIT_ASCENT_RECYCLE_8: //LGC CSM state vector + RLS to Ascent determination
+		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff + 10.0), 103, MST_J3_LUNAR_ORBIT_ASCENT_DAY_23);
 		break;
 
 		/*case MST_J3_LUNAR_ORBIT_ASCENT_DAY_1: //Nominal Insertion targeting + CMC SV update to LM Ascent PAD

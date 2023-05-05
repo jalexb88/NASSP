@@ -1516,7 +1516,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "DOI-2");
-		sprintf(form->remarks, "TIG AGS 373: %+05.1f", AGSTIG / 60.0);
+		sprintf(form->remarks, "\nTIG AGS 373: %+05.1f", AGSTIG / 60.0);
 	}
 	break;
 	case 39: //CSM CIRC calculation
@@ -1880,7 +1880,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		agsclockzero = GETfromGMT(GetAGSClockZero());
 		OrbMech::SStoHHMMSS(agsclockzero, hh, mm, ss);
 
-		sprintf(upMessage, "K-FACTOR: %d:%d:%.2lf", hh, mm, ss);
+		sprintf(upMessage, "K-FACTOR: %03d:%02d:%.2lf", hh, mm, ss);
 	}
 	break;
 	case 56: //REV 12 LS TCA
@@ -1922,7 +1922,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 	}
 	break;
-	case 59: //LM P22 ACQUISITION TIME PRE-ASCENT
+	case 59: //LM P22 ACQUISITION TIME
 	{
 		LMP22ACQPAD * form = (LMP22ACQPAD*)pad;
 
@@ -1932,7 +1932,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		sv0 = StateVectorCalc(calcParams.src);
 
-		LmkTime = calcParams.LunarLiftoff - 3 * 3600.0 - 30.0*60.0;
+		LmkTime = calcParams.LunarLiftoff - 2 * 3600.0 - 30.0*60.0;
 
 		alt = BZLAND.rad[RTCC_LMPOS_BEST] - OrbMech::R_Moon;;
 		lat = BZLAND.lat[RTCC_LMPOS_BEST];
@@ -1971,7 +1971,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 63: //LANDMARK TRACKING PAD (17-X)
 	case 64: //LANDMARK TRACKING PAD (17-1)
 	case 65: //LANDMARK TRACKING PAD (RP-3)
-	case 66: //LM ACQUISITION TIME
+	case 66: //LANDMARK TRACKING PAD (F-1 & 17-1)
 	{
 		LMARKTRKPADOpt opt;
 		SV sv0;
@@ -2058,17 +2058,21 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			opt.lat[0] = -3.694*RAD;
 			opt.lng[0] = 131.912*RAD;
 		}
-		else if (fcn == 66)
+		else if (fcn == 66) //LANDMARK TRACKING PAD (F-1 & 17-1)
 		{
-			//Update landing site
-			calcParams.tgt->GetEquPos(BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
+			opt.entries = 2;
 
-			sprintf(form->LmkID[0], "Lunar Module");
-			opt.alt[0] = BZLAND.rad[RTCC_LMPOS_BEST] - OrbMech::R_Moon;
-			opt.lat[0] = BZLAND.lat[RTCC_LMPOS_BEST];
-			opt.LmkTime[0] = GET_SV + 45.0*60.0;
-			opt.lng[0] = BZLAND.lng[RTCC_LMPOS_BEST];
-			opt.entries = 1;
+			sprintf(form->LmkID[0], "F-1");
+			opt.LmkTime[0] = calcParams.LunarLiftoff - 2.0*3600.0 - 40.0*60.0;
+			opt.alt[0] = 0.0;
+			opt.lat[0] = 1.863*RAD;
+			opt.lng[0] = 88.25*RAD;
+
+			sprintf(form->LmkID[1], "17-1");
+			opt.LmkTime[1] = calcParams.LunarLiftoff - 2.0*3600.0 - 30.0*60.0;
+			opt.alt[1] = -1.96*1852.0;
+			opt.lat[1] = 20.16*RAD;
+			opt.lng[1] = 30.809*RAD;
 		}
 
 		LandmarkTrackingPAD(&opt, *form);
@@ -2444,8 +2448,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.DH[0] = 10.0*1852.0;
 		opt.DH[1] = 15.0*1852.0;
 		opt.DH[2] = 20.0*1852.0;
-		opt.v_LH = 5535.6*0.3048;
-		opt.v_LV = 32.0*0.3048;
+		opt.v_LH = 5535.6*0.3048; //5509.5?
+		opt.v_LV = 32.0*0.3048; //19.5?
 		opt.h_BO = 60000.0*0.3048;
 		opt.Y_S = 0.5*RAD;
 		opt.DT_B = 50.0*60.0;
@@ -2608,12 +2612,27 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		REFSMMAT = REFSMMATCalc(&opt);
 		AGCDesiredREFSMMATUpdate(buffer, REFSMMAT);
 
+		//Store as LM LLD
+		EMGSTSTM(RTCC_MPT_LM, REFSMMAT, RTCC_REFSMMAT_TYPE_LLD, RTCCPresentTimeGMT());
+		//Also move to CSM LCV
+		GMGMED("G00,LEM,LLD,CSM,LCV;");
+
 		sprintf(uplinkdata, "%s", buffer);
 		if (upString != NULL) {
 			// give to mcc
 			strncpy(upString, uplinkdata, 1024 * 3);
 			sprintf(upDesc, "Liftoff REFSMMAT");
 		}
+	}
+	break;
+	case 98: //P57 Liftoff time
+	{
+		int hh, mm;
+		double ss;
+
+		OrbMech::SStoHHMMSS(calcParams.LunarLiftoff, hh, mm, ss);
+
+		sprintf(upMessage, "P57 Liftoff time: %03d:%02d:%0.2lf", hh, mm, ss);
 	}
 	break;
 	case 99: //LIFTOFF TIME INITIAL CALCULATION
@@ -2696,20 +2715,25 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			n++;
 		}
 
+		LunarAscentProcessor(R_LS, m0, sv_CSM, PZLLTT.GETLOR, PZLLTT.VH, opt.V_Z_NOM, theta_1, dt_1, dv, sv_IG, sv_Ins);
+
 		calcParams.LunarLiftoff = PZLLTT.GETLOR;
 		calcParams.Insertion = OrbMech::GETfromMJD(sv_Ins.MJD, CalcGETBase());
 		calcParams.TPI = PZLLTT.GET_TPI;
+
+		//Store for Ascent PAD
+		TimeofIgnition = calcParams.LunarLiftoff;
 		DeltaV_LVLH = _V(PZLLTT.VH, opt.V_Z_NOM, 0);
+		calcParams.TIGSTORE1 = calcParams.TPI;
+
+		calcParams.SVSTORE1 = sv_Ins;
 	}
 	break;
 	case 101: //COELLIPTIC RENDEZVOUS TARGET
 	{
 		LunarLiftoffTimeOpt opt;
-		REFSMMATOpt refsopt;
 		SV sv_CSM, sv_LM_upl, sv_Ins, sv_IG;
-		MATRIX3 REFSMMAT;
 		VECTOR3 R_LS;
-		char buffer1[64], buffer2[100];
 		double m0, theta_1, dt_1, dv, t_TPI_guess, t_TPI;
 
 		sv_CSM = StateVectorCalc(calcParams.src);
@@ -2738,8 +2762,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.DH[0] = 10.0*1852.0;
 		opt.DH[1] = 15.0*1852.0;
 		opt.DH[2] = 20.0*1852.0;
-		opt.v_LH = 5533.9*0.3048;
-		opt.v_LV = 34.4*0.3048;
+		opt.v_LH = 5539.0*0.3048;
+		opt.v_LV = 38.0*0.3048;
 		opt.h_BO = 60000.0*0.3048;
 		opt.Y_S = 0.5*RAD;
 		opt.DT_B = 50.0*60.0;
@@ -2766,48 +2790,16 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		//Final pass through
 		LunarLaunchWindowProcessor(opt);
 
-		calcParams.LunarLiftoff = PZLRPT.data[1].GETLO;
-		calcParams.Insertion = PZLRPT.data[1].T_INS;
 		calcParams.CSI = PZLRPT.data[1].T_CSI;
 		calcParams.CDH = PZLRPT.data[1].T_CDH;
-		calcParams.TPI = PZLRPT.data[1].T_TPI;
 
-		//Calculate Liftoff REFSMMAT
-		refsopt.LSLat = BZLAND.lat[RTCC_LMPOS_BEST];
-		refsopt.LSLng = BZLAND.lng[RTCC_LMPOS_BEST];
-		refsopt.REFSMMATopt = 5;
-		refsopt.REFSMMATTime = calcParams.LunarLiftoff;
-		refsopt.vessel = calcParams.src;
-		REFSMMAT = REFSMMATCalc(&refsopt);
-
-		//Store as LM LLD
-		EMGSTSTM(RTCC_MPT_LM, REFSMMAT, RTCC_REFSMMAT_TYPE_LLD, RTCCPresentTimeGMT());
-		//Also move to CSM LCV
-		GMGMED("G00,LEM,LLD,CSM,LCV;");
-
-		//Store for Ascent PAD
-		DeltaV_LVLH = _V(opt.v_LH, opt.v_LV, 0);
-		//Store for CSI PAD
-		calcParams.DVSTORE1 = _V(PZLRPT.data[1].DVCSI*0.3048, 0, 0);
-		calcParams.SVSTORE1 = sv_Ins;
-
-		sv_LM_upl = coast(sv_Ins, PZLRPT.data[1].T_INS + 18.0*60.0 - OrbMech::GETfromMJD(sv_Ins.MJD, CalcGETBase()));
-
-		sprintf(buffer1, "%sV45E", buffer1);
-		AGCStateVectorUpdate(buffer2, sv_LM_upl, false);
-
-		//Calculate T19
-		opt.t_hole += 2.0*3600.0;
-		LunarLaunchWindowProcessor(opt);
 		//Store for Ascent PAD
 		TimeofIgnition = PZLRPT.data[1].GETLO;
+		DeltaV_LVLH = _V(opt.v_LH, opt.v_LV, 0);
+		calcParams.TIGSTORE1 = PZLRPT.data[1].T_TPI;
 
-		sprintf(uplinkdata, "%s%s", buffer1, buffer2);
-		if (upString != NULL) {
-			// give to mcc
-			strncpy(upString, uplinkdata, 1024 * 3);
-			sprintf(upDesc, "Reset surface flag, LM state vector");
-		}
+		//Store for CSI PAD
+		calcParams.DVSTORE1 = _V(PZLRPT.data[1].DVCSI*0.3048, 0, 0);
 	}
 	break;
 	case 102: //CMC INSERTION STATE VECTORS
@@ -2818,13 +2810,13 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		sv_CSM = StateVectorCalc(calcParams.src);
 
-		sv_CSM_upl = coast(sv_CSM, calcParams.Insertion + 18.0*60.0 - OrbMech::GETfromMJD(sv_CSM.MJD, CalcGETBase()));
-		sv_LM_upl = coast(calcParams.SVSTORE1, calcParams.Insertion + 18.0*60.0 - OrbMech::GETfromMJD(calcParams.SVSTORE1.MJD, CalcGETBase()));
+		sv_CSM_upl = coast(sv_CSM, calcParams.LunarLiftoff - OrbMech::GETfromMJD(sv_CSM.MJD, CalcGETBase()));
+		sv_LM_upl = coast(calcParams.SVSTORE1, calcParams.Insertion + 5.0*60.0 - OrbMech::GETfromMJD(calcParams.SVSTORE1.MJD, CalcGETBase()));
 
 		AGCStateVectorUpdate(buffer1, sv_CSM_upl, true);
 		AGCStateVectorUpdate(buffer2, sv_LM_upl, false);
 
-		if (fcn == 101)
+		if (fcn == 102)
 		{
 			sprintf(uplinkdata, "%s%s", buffer1, buffer2);
 			if (upString != NULL) {
@@ -2857,7 +2849,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		double m0, m1, TIG, v_LH, v_LV;
 
 		//Definitions
-		TIG = calcParams.LunarLiftoff;
+		TIG = TimeofIgnition;
 		v_LH = DeltaV_LVLH.x;
 		v_LV = DeltaV_LVLH.y;
 
@@ -2877,18 +2869,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		SV sv_Ins, sv_CSM_TIG;
 		MATRIX3 Rot_LG, Rot_VG;
 		VECTOR3 R_LSP, Q, U_R, Z_B, X_AGS, Y_AGS, Z_AGS;
-		double CR, MJD_TIG, SMa, R_D, delta_L, sin_DL, cos_DL, KFactor;
+		double CR, MJD_TIG, SMa, R_D, delta_L, sin_DL, cos_DL, AGSTPI, apo, peri;
 
-		int hh, mm;
-		double ss;
+		AGSTPI = calcParams.TIGSTORE1 - GETfromGMT(GetAGSClockZero());
 
-		bool res_k = CalculateAGSKFactor(&l->agc.vagc, &l->aea.vags, KFactor);
-		if (res_k)
-		{
-			SystemParameters.MCGZSS = SystemParameters.MCGZSL + KFactor / 3600.0;
-		}
-
-		OrbMech::SStoHHMMSS(GETfromGMT(GetAGSClockZero()), hh, mm, ss);
+		OrbMech::periapo(sv_CSM.R, sv_CSM.V, OrbMech::mu_Moon, apo, peri);
 
 		MJD_TIG = OrbMech::MJDfromGET(TIG, CalcGETBase());
 		sv_CSM_TIG = coast(sv_CSM, TIG - OrbMech::GETfromMJD(sv_CSM.MJD, CalcGETBase()));
@@ -2926,10 +2911,10 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->DEDA225_226 = SMa / 0.3048 / 100.0;
 		form->DEDA231 = length(R_LS) / 0.3048 / 100.0;
 		form->DEDA465 = v_LV / 0.3048;
-		form->TIG_2 = calcParams.TPI;
+		form->TIG_2 = calcParams.TIGSTORE1;
 		form->LMWeight = m0 / 0.45359237;
 		form->CSMWeight = m1 / 0.45359237;
-		sprintf(form->remarks, "K-Factor is %d:%02d:%05.2f", hh, mm, ss);
+		sprintf(form->remarks, "\n373 TPI: %+05.1f\nCSM HA: %+05.1f\nCSM HP: %+05.1f", AGSTPI / 60.0, (apo - OrbMech::R_Moon) / 1852.0, (peri - OrbMech::R_Moon) / 1852.0);
 	}
 	break;
 	case 106: //NOMINAL CSI PAD
@@ -2944,7 +2929,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.REFSMMAT = EZJGMTX3.data[RTCC_REFSMMAT_TYPE_LLD - 1].REFSMMAT;
 		opt.sv0 = calcParams.SVSTORE1;
 		opt.t_CSI = calcParams.CSI;
-		opt.t_TPI = calcParams.TPI;
+		opt.t_TPI = calcParams.TIGSTORE1;
 
 		AP10CSIPAD(&opt, *form);
 		form->type = 1;
@@ -2956,6 +2941,51 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		{
 			sprintf(upMessage, "Launch scrubbed, recycle for next rev");
 			scrubbed = true;
+		}
+	}
+	break;
+	case 108: //ASCENT DETERMINATON
+	{
+		if (calcParams.tgt->GroundContact())
+		{
+			sprintf(upMessage, "Nominal liftoff TIG passed. Fly coelliptic ascent");
+			calcParams.LunarLiftoff = TimeofIgnition;
+			calcParams.Insertion = calcParams.LunarLiftoff + 7.0*60.0;
+			calcParams.TPI = calcParams.TIGSTORE1;
+			scrubbed = true;
+		}
+	}
+	break;
+	case 109: //TWEAK BURN
+	{
+		LambertMan opt;
+		TwoImpulseResuls res;
+		SV sv_LM, sv_CSM;
+
+		sv_CSM = StateVectorCalc(calcParams.src);
+		sv_LM = StateVectorCalc(calcParams.tgt);
+
+		opt.mode = 2;
+		opt.axis = RTCC_LAMBERT_MULTIAXIS;
+		opt.DH = 15.0*1852.0;
+		opt.ElevationAngle = 26.6*RAD;
+		opt.N = 0;
+		opt.Perturbation = RTCC_LAMBERT_PERTURBED;
+		opt.PhaseAngle = 1.7*RAD;
+		opt.sv_A = sv_LM;
+		opt.sv_P = sv_CSM;
+		opt.T1 = calcParams.Insertion + 3.0*60.0;
+		opt.T2 = calcParams.TPI;
+
+		LambertTargeting(&opt, res);
+
+		if (length(res.dV_LVLH) > 5.0 / 0.3048)
+		{
+			sprintf(upMessage, "Tweak Burn: VX %+2.1f VY %+2.1f VZ %+2.1f", res.dV_LVLH.x / 0.3048, res.dV_LVLH.y / 0.3048, res.dV_LVLH.z / 0.3048);
+		}
+		else
+		{
+			sprintf(upMessage, "Tweak Burn scrubbed");
 		}
 	}
 	break;
@@ -3472,7 +3502,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		sprintf_s(Buff, "P15,LGC,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
 
-		if (mcc->MoonRev < 42)
+		if (mcc->MoonRev < 50)
 		{
 			GMGMED("P15,AGS,,110:00:00;");
 		}
@@ -3552,6 +3582,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 161: //Zodiacal light photo PAD (163:13)
 	case 162: //Lunar sounder PAD (166:40)
 	case 163: //Pan camera photo PAD(183:45)
+	case 164: //Zodiacal light photo PAD (SR)
 	{
 		double MJD;
 		OBJHANDLE gravref;
@@ -3668,9 +3699,12 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			lng2 = 26.0*RAD;
 			coast_t = 55.0*60.0;
 		}
-		else
+		else if (fcn == 164) //Zodiacal light photo PAD (SR)
 		{
-			sprintf(purpose, "PAN CAMERA PHOTO PAD");
+			sprintf(purpose, "ZODIACAL LIGHT PHOTO PAD (SR)");
+			padtype = 2;
+			dt = -15.0*60.0;
+			coast_t = 30.0*60.0;
 		}
 
 		sv2 = coast(sv1, coast_t);
