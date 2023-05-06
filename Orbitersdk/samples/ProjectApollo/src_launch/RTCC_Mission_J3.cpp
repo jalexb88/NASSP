@@ -1516,7 +1516,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "DOI-2");
-		sprintf(form->remarks, "\nTIG AGS 373: %+05.1f", AGSTIG / 60.0);
+		sprintf(form->remarks, "TIG AGS 373: %+05.1f", AGSTIG / 60.0);
 	}
 	break;
 	case 39: //CSM CIRC calculation
@@ -2143,7 +2143,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 72: //No PDI+12 PAD
 	{
 		AP11LMManPADOpt opt;
-		TwoImpulseResuls res;
 		SV svlm0, svlm1, svcsm0, svcsm1;
 		VECTOR3 dV_LVLH;
 		double P30TIG, t_sunrise, t_CSI, t_TPI, DH, TIG, dvx1, dvx2;
@@ -2979,7 +2978,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		LambertTargeting(&opt, res);
 
-		if (length(res.dV_LVLH) > 5.0 / 0.3048)
+		if (length(res.dV_LVLH) > 5.0 * 0.3048)
 		{
 			sprintf(upMessage, "Tweak Burn: VX %+2.1f VY %+2.1f VZ %+2.1f", res.dV_LVLH.x / 0.3048, res.dV_LVLH.y / 0.3048, res.dV_LVLH.z / 0.3048);
 		}
@@ -3200,7 +3199,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 134: //No PDI2+12 PAD
 	{
 		AP11LMManPADOpt opt;
-		TwoImpulseResuls res;
 		SV svlm, svcsm, svman, svboost;
 		VECTOR3 dV_LVLH;
 		double P30TIG, t_sunrise, t_CSI, t_TPI, DH, TIG, dvx;
