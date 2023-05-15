@@ -281,7 +281,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 28, MST_J3_TRANSLUNAR25);
 		break;
 	case MST_J3_TRANSLUNAR25: //Rev 1 Map Update to LOI Evaluation
-		UpdateMacro(UTP_PADONLY, PT_AP10MAPUPDATE, rtcc->GETEval2(rtcc->TimeofIgnition + 7.0*60.0), 60, MST_J3_TRANSLUNAR26);
+		UpdateMacro(UTP_PADONLY, PT_AP10MAPUPDATE, rtcc->GETEval2(rtcc->TimeofIgnition + 7.0*60.0), 128, MST_J3_TRANSLUNAR26);
 		break;
 	case MST_J3_TRANSLUNAR26: //LOI Evaluation to Lunar orbit phase begin or PC+2
 		UpdateMacro(UTP_NONE, PT_NONE, true, 33, MST_J3_LUNAR_ORBIT_LOI_DAY_1, scrubbed, true, MST_J3_ABORT);
@@ -317,7 +317,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, true, 30, MST_J3_LUNAR_ORBIT_LOI_DAY_7);
 		break;
 	case MST_J3_LUNAR_ORBIT_LOI_DAY_7: //Rev 3 Map Update to J3 Landmark Tracking PAD
-		UpdateMacro(UTP_PADONLY, PT_AP10MAPUPDATE, SubStateTime > 3.0*60.0, 61, MST_J3_LUNAR_ORBIT_LOI_DAY_8);
+		UpdateMacro(UTP_PADONLY, PT_AP10MAPUPDATE, SubStateTime > 3.0*60.0, 129, MST_J3_LUNAR_ORBIT_LOI_DAY_8);
 		break;
 	case MST_J3_LUNAR_ORBIT_LOI_DAY_8: //J3 Landmark Tracking PAD to TEI-5 update
 		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, SubStateTime > 5.0*60.0, 62, MST_J3_LUNAR_ORBIT_LOI_DAY_9);
@@ -754,27 +754,42 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_FINAL_DAY_11: //CSM state vector to CSM state vector
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 72 && MoonRevTime > 68.0*60.0, 5, MST_J3_LUNAR_ORBIT_PRE_TEI_1);
 		break;
-
-
-		/*
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_10: //CSM SV update to TEI-45 PAD (preliminary)
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 44 && MoonRevTime > 40.0*60.0, 5, MST_J3_LUNAR_ORBIT_PC2_DAY_11);
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_1: //CSM state vector to Lunar sounder PAD (230:55)
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 5, MST_J3_LUNAR_ORBIT_PRE_TEI_2);
 		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_11: //TEI-45 PAD (preliminary) to TEI REFSMMAT uplink
-		UpdateMacro(UTP_PADONLY, PT_AP11MNV, MoonRev >= 44 && MoonRevTime > 85.0*60.0, 49, MST_J3_LUNAR_ORBIT_PC2_DAY_12);
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_2: //Lunar sounder PAD (230:55) to TEI-75 PAD (preliminary)
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 3.0*60.0, 171, MST_J3_LUNAR_ORBIT_PRE_TEI_3);
 		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_12: //TEI REFSMMAT Uplink to TEI-45 PAD (final)
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 45 && MoonRevTime > 55.0*60.0, 132, MST_J3_LUNAR_ORBIT_PC2_DAY_13);
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_3: //TEI-75 PAD (preliminary) to Lunar sounder PAD
+		UpdateMacro(UTP_PADONLY, PT_AP11MNV, MoonRev >= 73 && MoonRevTime > 27.0*60.0, 51, MST_J3_LUNAR_ORBIT_PRE_TEI_4);
 		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_13: //TEI-45 PAD (final) to TEI-46 PAD
-		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 50, MST_J3_LUNAR_ORBIT_PC2_DAY_14);
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_4: //Lunar sounder PAD to Lunar sounder PAD (232:20)
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, MoonRev >= 73 && MoonRevTime > 45.0*60.0, 172, MST_J3_LUNAR_ORBIT_PRE_TEI_5);
 		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_14: //TEI-46 PAD to TEI Evaluation
-		UpdateMacro(UTP_PADONLY, PT_AP11MNV, rtcc->GETEval2(rtcc->calcParams.TEI + 300.0), 51, MST_J3_LUNAR_ORBIT_PC2_DAY_15);
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_5: //Lunar sounder PAD (232:20) to Pan camera photo PAD (233:20)
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 3.0*60.0, 173, MST_J3_LUNAR_ORBIT_PRE_TEI_6);
 		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_15: //TEI Evaluation to TEI
-		UpdateMacro(UTP_NONE, PT_NONE, true, 200, MST_J3_TRANSEARTH_1, scrubbed, rtcc->GETEval2(rtcc->calcParams.TEI + 30.0*60.0), MST_J3_LUNAR_ORBIT_PC2_DAY_13);
-		break;*/
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_6: //Pan camera photo PAD (233:20) to Pan camera photo PAD (233:40)
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, MoonRev >= 74 && MoonRevTime > 35.0*60.0, 174, MST_J3_LUNAR_ORBIT_PRE_TEI_7);
+		break;
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_7: //Pan camera photo PAD (233:40) to TEI REFSMMAT uplink
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 3.0*60.0, 175, MST_J3_LUNAR_ORBIT_PRE_TEI_8);
+		break;
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_8: //TEI REFSMMAT uplink to TEI-75 update (final)
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 75 && MoonRevTime > 46.0*60.0, 132, MST_J3_LUNAR_ORBIT_PRE_TEI_9);
+		break;
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_9: //TEI-75 update (final) to TEI-76 update
+		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 52, MST_J3_LUNAR_ORBIT_PRE_TEI_10);
+		break;
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_10: //TEI-76 update to Map update REV 76
+		UpdateMacro(UTP_PADONLY, PT_AP11MNV, SubStateTime > 5.0*60.0, 53, MST_J3_LUNAR_ORBIT_PRE_TEI_11);
+		break;
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_11: //Map update REV 76 to TEI Evaluation
+		UpdateMacro(UTP_PADONLY, PT_AP10MAPUPDATE, rtcc->GETEval2(rtcc->calcParams.TEI + 300.0), 130, MST_J3_LUNAR_ORBIT_PRE_TEI_12);
+		break;
+	case MST_J3_LUNAR_ORBIT_PRE_TEI_12: //TEI Evaluation to TEI or TEI recycle
+		UpdateMacro(UTP_NONE, PT_NONE, true, 200, MST_J3_TRANSEARTH_1, scrubbed, rtcc->GETEval2(rtcc->calcParams.TEI + 50.0*60.0), MST_J3_LUNAR_ORBIT_PRE_TEI_9);
+		break;
 	case MST_J3_TRANSEARTH_1: //TEI to PTC REFSMMAT
 		switch (SubState)
 		{
@@ -783,7 +798,7 @@ void MCC::MissionSequence_J3()
 			setSubState(1);
 			break;
 		case 1:
-			if (rtcc->GETEval2(rtcc->calcParams.TEI + 20.0*60.0))
+			if (rtcc->GETEval2(rtcc->calcParams.TEI + 75.0*60.0))
 			{
 				SlowIfDesired();
 				setState(MST_J3_TRANSEARTH_2);

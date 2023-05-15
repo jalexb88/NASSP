@@ -1658,6 +1658,9 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		opt.REFSMMAT = GetREFSMMATfromAGC(&mcc->cm->agc.vagc, true);
 		returnspeed = 1;
+		med_f75_f77.Inclination = 0.0;
+
+		std::string site = med_f77.Site;
 
 		if (fcn == 41)
 		{
@@ -1723,17 +1726,23 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		else if (fcn == 51) //Preliminary
 		{
 			sprintf(manname, "TEI-75");
-			MoonRevTEI = 44.5;
+			MoonRevTEI = 73.9;
+			site = PZREAP.PTPSite[0];
+			med_f75_f77.Inclination = 66.5*RAD; //From SCOT (72-FM-187) pg 4-146
 		}
 		else if (fcn == 52) //Final
 		{
 			sprintf(manname, "TEI-%d", mcc->MoonRev);
-			MoonRevTEI = ((double)mcc->MoonRev) - 0.5;
+			MoonRevTEI = ((double)mcc->MoonRev) - 1.1;
+			site = PZREAP.PTPSite[0];
+			med_f75_f77.Inclination = 66.5*RAD; //From SCOT (72-FM-187) pg 4-146
 		}
 		else if (fcn == 53)
 		{
 			sprintf(manname, "TEI-%d", mcc->MoonRev + 1);
-			MoonRevTEI = ((double)mcc->MoonRev + 1) - 0.5;
+			MoonRevTEI = ((double)mcc->MoonRev + 1) - 1.1;
+			site = PZREAP.PTPSite[0];
+			med_f75_f77.Inclination = 66.5*RAD; //From SCOT (72-FM-187) pg 4-146
 		}
 
 		AbortGuess = calcParams.LOI + (MoonRevTEI * 2.0*3600.0);
@@ -1758,7 +1767,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		med_f75_f77.T_0_min = AbortGuess;
 		med_f75_f77.T_Z = AbortGuess + DT_TEI_EI;
 
-		DetermineRTESite(med_f77.Site);
+		DetermineRTESite(site);
 
 		PZREAP.RTEVectorTime = GMTfromGET(med_f75_f77.T_V) / 3600.0;
 		PZREAP.RTET0Min = GMTfromGET(med_f75_f77.T_0_min) / 3600.0;
@@ -1846,7 +1855,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			form->type = 1;
 		}
 
-		if (fcn != 52)
+		if (fcn != 53)
 		{
 			//Save parameters for further use
 			SplashLatitude = PZREAP.RTEDTable[0].lat_imp_tgt;
@@ -1855,7 +1864,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			calcParams.EI = PZREAP.RTEDTable[0].ReentryPET;
 		}
 
-		if (fcn == 51)
+		if (fcn == 52)
 		{
 			char buffer1[1000], buffer2[1000];
 			TimeofIgnition = PZREAP.RTEDTable[0].GETI;
@@ -1954,28 +1963,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		dt2 = OrbMech::findelev_gs(sv1.R, sv1.V, R_P, MJDguess, 152.0*RAD, sv1.gravref, LmkRange);
 
 		form->P22_ACQ_GET = dt2 + (MJDguess - CalcGETBase()) * 24.0 * 60.0 * 60.0;
-	}
-	break;
-	case 60: //REV 1 MAP UPDATE
-	case 61: //REV 3 MAP UPDATE
-	{
-		SV2 sv0, sv1, sv2;
-		AP10MAPUPDATE upd_hyper, upd_ellip;
-
-		AP10MAPUPDATE * form = (AP10MAPUPDATE *)pad;
-
-		sv0 = StateVectorCalc2(calcParams.src);
-		LunarOrbitMapUpdate(sv0.sv, upd_hyper);
-
-		sv1 = ExecuteManeuver(sv0, TimeofIgnition, DeltaV_LVLH, RTCC_ENGINETYPE_CSMSPS);
-		sv2.sv = coast(sv1.sv, -30.0*60.0);
-		LunarOrbitMapUpdate(sv2.sv, upd_ellip);
-
-		form->Rev = 1;
-		form->type = 2;
-		form->AOSGET = upd_hyper.AOSGET;
-		form->LOSGET = upd_hyper.LOSGET;
-		form->PMGET = upd_ellip.AOSGET;
 	}
 	break;
 	case 62: //LANDMARK TRACKING PAD (J3)
@@ -3223,6 +3210,29 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 	}
 	break;
+	case 128: //REV 1 MAP UPDATE
+	case 129: //REV 3 MAP UPDATE
+	case 130: //REV 76 MAP UPDATE
+	{
+		SV2 sv0, sv1, sv2;
+		AP10MAPUPDATE upd_hyper, upd_ellip;
+
+		AP10MAPUPDATE * form = (AP10MAPUPDATE *)pad;
+
+		sv0 = StateVectorCalc2(calcParams.src);
+		LunarOrbitMapUpdate(sv0.sv, upd_hyper);
+
+		sv1 = ExecuteManeuver(sv0, TimeofIgnition, DeltaV_LVLH, RTCC_ENGINETYPE_CSMSPS);
+		sv2.sv = coast(sv1.sv, -30.0*60.0);
+		LunarOrbitMapUpdate(sv2.sv, upd_ellip);
+
+		form->Rev = 1;
+		form->type = 2;
+		form->AOSGET = upd_hyper.AOSGET;
+		form->LOSGET = upd_hyper.LOSGET;
+		form->PMGET = upd_ellip.AOSGET;
+	}
+	break;
 	case 132: //TEI REFSMMAT UPLINK
 	{
 		MATRIX3 REFSMMAT;
@@ -3624,6 +3634,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 168: //Pan camera photo PAD
 	case 169: //Lunar sounder PAD (213:15)
 	case 170: //Lunar sounder PAD (213:38)
+	case 171: //Lunar sounder PAD (230:55)
+	case 172: //Lunar sounder PAD
+	case 173: //Lunar sounder PAD (232:20)
+	case 174: //Pan camera photo PAD (233:20)
+	case 175: //Pan camera photo PAD (233:40)
 	{
 		GENERICPAD * form = (GENERICPAD *)pad;
 
@@ -3751,47 +3766,87 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 		else if (fcn == 165) //Lunar sounder T-STOP (196:20)
 		{
-		sprintf(purpose, "LUNAR SOUNDER PAD");
-		padtype = 1;
-		lng1 = -39.0*RAD;
-		coast_t = 15.0*60.0;
+			sprintf(purpose, "LUNAR SOUNDER PAD");
+			padtype = 1;
+			lng1 = -39.0*RAD;
+			coast_t = 15.0*60.0;
 		}
 		else if (fcn == 166) //Solar corona photo PAD (SS)
 		{
-		sprintf(purpose, "SOLAR CORONA PHOTO PAD (SS)");
-		padtype = 4;
-		dt = -5.0*60.0;
-		coast_t = 5.0*60.0;
+			sprintf(purpose, "SOLAR CORONA PHOTO PAD (SS)");
+			padtype = 4;
+			dt = -5.0*60.0;
+			coast_t = 5.0*60.0;
 		}
 		else if (fcn == 167) //Pan camera photo PAD (209:15)
 		{
-		sprintf(purpose, "PAN CAMERA PHOTO PAD");
-		padtype = 2;
-		lng1 = 133.0*RAD;
-		lng2 = 90.0*RAD;
+			sprintf(purpose, "PAN CAMERA PHOTO PAD");
+			padtype = 2;
+			lng1 = 133.0*RAD;
+			lng2 = 90.0*RAD;
 		}
 		else if (fcn == 168) //Pan camera photo PAD
 		{
-		sprintf(purpose, "PAN CAMERA PHOTO PAD");
-		padtype = 2;
-		lng1 = 33.0*RAD;
-		lng2 = 27.0*RAD;
-		coast_t = 1.0*60.0;
+			sprintf(purpose, "PAN CAMERA PHOTO PAD");
+			padtype = 2;
+			lng1 = 33.0*RAD;
+			lng2 = 27.0*RAD;
+			coast_t = 1.0*60.0;
 		}
 		else if (fcn == 169) //Lunar sounder PAD (213:15)
 		{
-		sprintf(purpose, "LUNAR SOUNDER PAD");
-		padtype = 2;
-		lng1 = 110.0*RAD;
-		lng2 = 98.0*RAD;
+			sprintf(purpose, "LUNAR SOUNDER PAD");
+			padtype = 2;
+			lng1 = 110.0*RAD;
+			lng2 = 98.0*RAD;
 		}
 		else if (fcn == 170) //Lunar sounder PAD (213:38)
 		{
-		sprintf(purpose, "LUNAR SOUNDER PAD");
-		padtype = 2;
-		lng1 = 49.0*RAD;
-		lng2 = -8.0*RAD;
-		coast_t = 80.0*60.0;
+			sprintf(purpose, "LUNAR SOUNDER PAD");
+			padtype = 2;
+			lng1 = 49.0*RAD;
+			lng2 = -8.0*RAD;
+			coast_t = 80.0*60.0;
+		}
+		else if (fcn == 171) //Lunar sounder PAD (230:55)
+		{
+			sprintf(purpose, "LUNAR SOUNDER PAD");
+			padtype = 2;
+			lng1 = 135.0*RAD;
+			lng2 = 117.0*RAD;
+			coast_t = 45.0*60.0;
+		}
+		else if (fcn == 172) //Lunar sounder PAD
+		{
+			sprintf(purpose, "LUNAR SOUNDER PAD");
+			padtype = 2;
+			lng1 = 58.0*RAD;
+			lng2 = -8.0*RAD;
+			coast_t = 5.0*60.0;
+		}
+		else if (fcn == 173) //Lunar sounder PAD (232:20)
+		{
+			sprintf(purpose, "LUNAR SOUNDER PAD");
+			padtype = 2;
+			lng1 = -117.0*RAD;
+			lng2 = -144.0*RAD;
+			coast_t = 40.0*60.0;
+		}
+		else if (fcn == 174) //Pan camera photo PAD (233:20)
+		{
+			sprintf(purpose, "PAN CAMERA PHOTO PAD");
+			padtype = 2;
+			lng1 = 67.0*RAD;
+			lng2 = 25.0*RAD;
+			coast_t = 90.0*60.0;
+		}
+		else if (fcn == 175) //Pan camera photo PAD (233:40)
+		{
+			sprintf(purpose, "PAN CAMERA PHOTO PAD");
+			padtype = 2;
+			lng1 = -5.0*RAD;
+			lng2 = -45.0*RAD;
+			coast_t = 10.0*60.0;
 		}
 
 		sv2 = coast(sv1, coast_t);
