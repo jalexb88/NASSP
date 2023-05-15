@@ -721,86 +721,42 @@ void MCC::MissionSequence_J3()
 	case MST_J3_LUNAR_ORBIT_POST_DOCKING_16: //TEI-65 update to Solar corona photo PAD (SS)
 		UpdateMacro(UTP_PADONLY, PT_AP11MNV, MoonRev >= 61 && MoonRevTime > 60.0*60.0, 49, MST_J3_LUNAR_ORBIT_FINAL_DAY_1);
 		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_1: //Solar corona photo PAD (SS) to Pan camera photo PAD (209:15)
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 3.0*60.0, 166, MST_J3_LUNAR_ORBIT_FINAL_DAY_2);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_2: //Pan camera photo PAD (209:15) to CSM state vector
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, MoonRev >= 62 && MoonRevTime > 38.0*60.0, 167, MST_J3_LUNAR_ORBIT_FINAL_DAY_3);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_3: //CSM state vector to Liftoff time Evaluation
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 5, MST_J3_LUNAR_ORBIT_FINAL_DAY_4);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_4: //Liftoff time Evaluation to CMC Liftoff time Update or Pan camera photo PAD
+		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 5.0, 143, MST_J3_LUNAR_ORBIT_FINAL_DAY_5, scrubbed, SubStateTime > 5.0, MST_J3_LUNAR_ORBIT_FINAL_DAY_7);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_5: //CMC Liftoff time Update to RTCC Liftoff time update
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, SubStateTime > 5.0, 144, MST_J3_LUNAR_ORBIT_FINAL_DAY_6);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_6: //RTCC Liftoff time update to Pan camera photo PAD
+		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 5.0, 145, MST_J3_LUNAR_ORBIT_FINAL_DAY_7);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_7: //Pan camera photo PAD to Lunar sounder PAD (213:15)
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, MoonRev >= 63 && MoonRevTime > 65.0*60.0, 168, MST_J3_LUNAR_ORBIT_FINAL_DAY_8);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_8: //Lunar sounder PAD (213:15) to Lunar sounder PAD (213:38)
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 3.0*60.0, 169, MST_J3_LUNAR_ORBIT_FINAL_DAY_9);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_9: //Lunar sounder PAD (213:38) to TEI-72 update
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, MoonRev >= 64 && MoonRevTime > 40.0*60.0, 170, MST_J3_LUNAR_ORBIT_FINAL_DAY_10);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_10: //TEI-72 update to CSM state vector
+		UpdateMacro(UTP_PADONLY, PT_AP11MNV, MoonRev >= 67 && MoonRevTime > 67.0*60.0, 50, MST_J3_LUNAR_ORBIT_FINAL_DAY_11);
+		break;
+	case MST_J3_LUNAR_ORBIT_FINAL_DAY_11: //CSM state vector to CSM state vector
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 72 && MoonRevTime > 68.0*60.0, 5, MST_J3_LUNAR_ORBIT_PRE_TEI_1);
+		break;
 
 
-		/*case MST_J3_LUNAR_ORBIT_ASCENT_DAY_1: //Nominal Insertion targeting + CMC SV update to LM Ascent PAD
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff - 90.0*60.0), 100, MST_J3_LUNAR_ORBIT_ASCENT_DAY_2);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_2: //LM Ascent PAD to CSI Data Card
-		UpdateMacro(UTP_PADONLY, PT_AP12LMASCPAD, SubStateTime > 5.0*60.0, 105, MST_J3_LUNAR_ORBIT_ASCENT_DAY_3);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_3: //CSI Data Card to LM Tracking PAD
-		UpdateMacro(UTP_PADONLY, PT_AP10CSI, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff - 45.0*60.0), 106, MST_J3_LUNAR_ORBIT_ASCENT_DAY_4);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_4: //LM Tracking PAD to CMC SV uplinks
-		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, SubStateTime > 5.0*60.0, 66, MST_J3_LUNAR_ORBIT_ASCENT_DAY_5);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_5: //CMC SV uplinks to LGC SV + RLS uplinks
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, SubStateTime > 5.0*60.0, 101, MST_J3_LUNAR_ORBIT_ASCENT_DAY_6);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_6: //LGC SV + RLS uplinks to LM Liftoff Evaluation
-		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff + 20.0), 102, MST_J3_LUNAR_ORBIT_ASCENT_DAY_7);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_7: //LM Liftoff Evaluation to CMC LM State Vector update
-		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.Insertion + 120.0), 107, MST_J3_LUNAR_ORBIT_ASCENT_DAY_8, scrubbed, SubStateTime > 15.0*60.0, MST_J3_LUNAR_ORBIT_ASCENT_DAY_1);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_8: //CMC LM State Vector update to SEP burn PAD
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff + 4.0*3600.0), 2, MST_J3_LUNAR_ORBIT_ASCENT_DAY_9);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_9: //SEP burn PAD to DAP data
-		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 110, MST_J3_LUNAR_ORBIT_ASCENT_DAY_10);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_10: //DAP data to Impact burn PAD
-		UpdateMacro(UTP_PADONLY, PT_AP10DAPDATA, SubStateTime > 5.0*60.0, 7, MST_J3_LUNAR_ORBIT_ASCENT_DAY_11);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_11: //Impact burn PAD to CSM P76 PAD
-		UpdateMacro(UTP_PADWITHLGCUPLINK, PT_AP11LMMNV, rtcc->GETEval2(rtcc->calcParams.SEP - 50.0*60.0), 111, MST_J3_LUNAR_ORBIT_ASCENT_DAY_12);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_12: //CSM P76 PAD to P42 uplink
-		UpdateMacro(UTP_PADONLY, PT_AP11P76PAD, rtcc->GETEval2(rtcc->calcParams.SEP + 5.0*60.0), 112, MST_J3_LUNAR_ORBIT_ASCENT_DAY_13);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_13: //P42 uplink to LM DSKY Pro
-		UpdateMacro(UTP_LGCUPLINKDIRECT, PT_NONE, SubStateTime > 20.0, 120, MST_J3_LUNAR_ORBIT_ASCENT_DAY_14);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_14: //LM DSKY Pro to LM DSKY Enter
-		UpdateMacro(UTP_LGCUPLINKDIRECT, PT_NONE, SubStateTime > 20.0, 121, MST_J3_LUNAR_ORBIT_ASCENT_DAY_15);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_15: //LM DSKY Enter to TEI-39 PAD
-		UpdateMacro(UTP_LGCUPLINKDIRECT, PT_NONE, rtcc->GETEval2(rtcc->TimeofIgnition - 10.0*60.0), 122, MST_J3_LUNAR_ORBIT_ASCENT_DAY_16);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_16: //TEI-39 PAD to LM command ullage off
-		UpdateMacro(UTP_PADONLY, PT_AP11MNV, rtcc->GETEval2(rtcc->calcParams.TIGSTORE1), 45, MST_J3_LUNAR_ORBIT_ASCENT_DAY_17);
-		break;
-	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_17: //LM command ullage off to PC-2 Update
-		UpdateMacro(UTP_LGCUPLINKDIRECT, PT_NONE, MoonRev >= 38 && MoonRevTime > 50.0*60.0, 123, MST_J3_LUNAR_ORBIT_PC2_DAY_1);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_1: //PC-2 Update to Photography REFSMMAT caclulation
-		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 95, MST_J3_LUNAR_ORBIT_PC2_DAY_2);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_2: //Photography REFSMMAT caclulation to TEI-41 PAD
-		UpdateMacro(UTP_NONE, PT_NONE, true, 130, MST_J3_LUNAR_ORBIT_PC2_DAY_3);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_3: //TEI-41 PAD to Photography REFSMMAT Uplink
-		UpdateMacro(UTP_PADONLY, PT_AP11MNV, rtcc->GETEval2(rtcc->TimeofIgnition + 5.0*60.0), 46, MST_J3_LUNAR_ORBIT_PC2_DAY_4);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_4: //Photography REFSMMAT Uplink to TEI-43 PAD
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 40 && MoonRevTime > 50.0*60.0, 131, MST_J3_LUNAR_ORBIT_PC2_DAY_5);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_5: //TEI-43 PAD to Landmark tracking PAD
-		UpdateMacro(UTP_PADONLY, PT_AP11MNV, MoonRev >= 41 && MoonRevTime > 70.0*60.0, 47, MST_J3_LUNAR_ORBIT_PC2_DAY_6);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_6: //Landmark tracking PAD to CSM SV update
-		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, SubStateTime > 5.0*60.0, 65, MST_J3_LUNAR_ORBIT_PC2_DAY_7);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_7: //CSM SV update to TEI-45 PAD (block data)
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 42 && MoonRevTime > 30.0*60.0, 5, MST_J3_LUNAR_ORBIT_PC2_DAY_8);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_8: //TEI-45 PAD (block data) to Landmark tracking PAD
-		UpdateMacro(UTP_PADONLY, PT_AP11MNV, MoonRev >= 42 && MoonRevTime > 75.0*60.0, 48, MST_J3_LUNAR_ORBIT_PC2_DAY_9);
-		break;
-	case MST_J3_LUNAR_ORBIT_PC2_DAY_9: //Landmark tracking PAD to CSM SV update
-		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, SubStateTime > 15.0*60.0, 65, MST_J3_LUNAR_ORBIT_PC2_DAY_10);
-		break;
+		/*
 	case MST_J3_LUNAR_ORBIT_PC2_DAY_10: //CSM SV update to TEI-45 PAD (preliminary)
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 44 && MoonRevTime > 40.0*60.0, 5, MST_J3_LUNAR_ORBIT_PC2_DAY_11);
 		break;

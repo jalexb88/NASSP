@@ -1715,9 +1715,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			MoonRevTEI = 64.5;
 			returnspeed = 0;
 		}
+		else if (fcn == 50)
+		{
+			sprintf(manname, "TEI-72");
+			MoonRevTEI = 70.9;
+		}
 		else if (fcn == 51) //Preliminary
 		{
-			sprintf(manname, "TEI-45");
+			sprintf(manname, "TEI-75");
 			MoonRevTEI = 44.5;
 		}
 		else if (fcn == 52) //Final
@@ -3437,24 +3442,32 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	}
 	break;
 	case 142: //Liftoff time Evaluation REV 26
+	case 143: //Liftoff time Evaluation REV 66
 	{
-		double t_lng, ttoLNG, dt, GETfp, GETm;
-		OBJHANDLE gravref;
+		double t_lng, ttoLNG, dt, GETfp, GETm, revs;
 		SV sv0, sv1, sv2;
 
 		sv0 = StateVectorCalc(calcParams.src);
-		sv1 = ExecuteManeuver(sv0, TimeofIgnition, DeltaV_LVLH, 0, RTCC_ENGINETYPE_CSMSPS);
 
-		gravref = GetGravref(BODY_MOON);
-		double revs = 12.5;
+		if (fcn == 142)
+		{
+			sv1 = ExecuteManeuver(sv0, TimeofIgnition, DeltaV_LVLH, 0, RTCC_ENGINETYPE_CSMSPS);
+			revs = 12.5;
+			GETfp = OrbMech::HHMMSSToSS(137, 49, 3);
+		}
+		else
+		{
+			sv1 = sv0;
+			revs = 3.5;
+			GETfp = OrbMech::HHMMSSToSS(216, 55, 5);
+		}
+
 		double t_P = OrbMech::period(sv1.R, sv1.V, OrbMech::mu_Moon);
 		sv2 = coast(sv1, t_P*revs);
 
-		t_lng = OrbMech::P29TimeOfLongitude(sv2.R, sv2.V, sv2.MJD, gravref, 180.0*RAD);
+		t_lng = OrbMech::P29TimeOfLongitude(sv2.R, sv2.V, sv2.MJD, GetGravref(BODY_MOON), 180.0*RAD);
 		ttoLNG = (t_lng - sv2.MJD)*24.0 * 3600.0;
 		GETm = (sv2.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
-
-		GETfp = OrbMech::HHMMSSToSS(137, 49, 3);
 
 		dt = GETfp - GETm;
 
@@ -3472,48 +3485,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			calcParams.DOI += dt;
 			calcParams.PDI += dt;
 			CZTDTGTU.GETTD += dt;
-			TimeofIgnition += dt;
-
-			calcParams.TLI = dt;
-
-			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
-
-			sprintf(upMessage, "Liftoff time update required\nAdjust times by: %d:%d:%.2lf", hh, mm, ss);
-		}
-	}
-	break;
-	case 143: //Liftoff time Evaluation REV 66
-	{
-		double t_lng, ttoLNG, dt, GETfp, GETm;
-		OBJHANDLE gravref;
-		SV sv0, sv1;
-
-		sv0 = StateVectorCalc(calcParams.src);
-
-		gravref = GetGravref(BODY_MOON);
-		double revs = 3.5;
-		double t_P = OrbMech::period(sv0.R, sv0.V, OrbMech::mu_Moon);
-		sv1 = coast(sv0, t_P*revs);
-
-		t_lng = OrbMech::P29TimeOfLongitude(sv1.R, sv1.V, sv1.MJD, gravref, 180.0*RAD);
-		ttoLNG = (t_lng - sv1.MJD)*24.0 * 3600.0;
-		GETm = (sv1.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
-
-		GETfp = OrbMech::HHMMSSToSS(216, 55, 5);
-
-		dt = GETfp - GETm;
-
-		if (abs(dt) < 120.0)
-		{
-			scrubbed = true;
-		}
-
-		if (!scrubbed)
-		{
-			int hh, mm;
-			double ss;
-
-			calcParams.LOI += dt;
 			TimeofIgnition += dt;
 
 			calcParams.TLI = dt;
@@ -3648,6 +3619,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 163: //Pan camera photo PAD(183:45)
 	case 164: //Zodiacal light photo PAD (SR)
 	case 165: //Lunar sounder T-STOP (196:20)
+	case 166: //Solar corona photo PAD (SS)
+	case 167: //Pan camera photo PAD (209:15)
+	case 168: //Pan camera photo PAD
+	case 169: //Lunar sounder PAD (213:15)
+	case 170: //Lunar sounder PAD (213:38)
 	{
 		GENERICPAD * form = (GENERICPAD *)pad;
 
@@ -3779,6 +3755,43 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		padtype = 1;
 		lng1 = -39.0*RAD;
 		coast_t = 15.0*60.0;
+		}
+		else if (fcn == 166) //Solar corona photo PAD (SS)
+		{
+		sprintf(purpose, "SOLAR CORONA PHOTO PAD (SS)");
+		padtype = 4;
+		dt = -5.0*60.0;
+		coast_t = 5.0*60.0;
+		}
+		else if (fcn == 167) //Pan camera photo PAD (209:15)
+		{
+		sprintf(purpose, "PAN CAMERA PHOTO PAD");
+		padtype = 2;
+		lng1 = 133.0*RAD;
+		lng2 = 90.0*RAD;
+		}
+		else if (fcn == 168) //Pan camera photo PAD
+		{
+		sprintf(purpose, "PAN CAMERA PHOTO PAD");
+		padtype = 2;
+		lng1 = 33.0*RAD;
+		lng2 = 27.0*RAD;
+		coast_t = 1.0*60.0;
+		}
+		else if (fcn == 169) //Lunar sounder PAD (213:15)
+		{
+		sprintf(purpose, "LUNAR SOUNDER PAD");
+		padtype = 2;
+		lng1 = 110.0*RAD;
+		lng2 = 98.0*RAD;
+		}
+		else if (fcn == 170) //Lunar sounder PAD (213:38)
+		{
+		sprintf(purpose, "LUNAR SOUNDER PAD");
+		padtype = 2;
+		lng1 = 49.0*RAD;
+		lng2 = -8.0*RAD;
+		coast_t = 80.0*60.0;
 		}
 
 		sv2 = coast(sv1, coast_t);
