@@ -806,26 +806,26 @@ void MCC::MissionSequence_J3()
 			break;
 		}
 		break;
-	case MST_J3_TRANSEARTH_2: //PTC REFSMMAT to MCC-5 update
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TEI + 13.0*3600.0 + 25.0*60.0), 18, MST_J3_TRANSEARTH_3);
+	case MST_J3_TRANSEARTH_2: //PTC REFSMMAT to CSM SV update
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TEI + 4.0*3600.0 + 5.0*60.0), 18, MST_J3_TRANSEARTH_3);
 		break;
-	case MST_J3_TRANSEARTH_3: //MCC-5 update to preliminary MCC-6 update
-		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, rtcc->GETEval2(rtcc->calcParams.TEI + 24.0*3600.0 + 25.0*60.0), 210, MST_J3_TRANSEARTH_4);
+	case MST_J3_TRANSEARTH_3: //CSM SV update to MCC-5 update
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TEI + 15.0*3600.0 + 25.0*60.0), 5, MST_J3_TRANSEARTH_4);
 		break;
-	case MST_J3_TRANSEARTH_4: //Preliminary MCC-6 update to Entry PAD update
-		UpdateMacro(UTP_PADONLY, PT_AP11MNV, SubStateTime > 5.0*60.0, 211, MST_J3_TRANSEARTH_5);
+	case MST_J3_TRANSEARTH_4: //MCC-5 update to CSM SV update
+		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, rtcc->GETEval2(rtcc->calcParams.TEI + 26.0*3600.0 + 40.0*60.0), 210, MST_J3_TRANSEARTH_5);
 		break;
-	case MST_J3_TRANSEARTH_5: //Entry PAD update to MCC-6 update
-		UpdateMacro(UTP_PADONLY, PT_AP11ENT, rtcc->GETEval2(rtcc->calcParams.EI - 24.0*3600.0 - 10.0*60.0), 216, MST_J3_TRANSEARTH_6);
+	case MST_J3_TRANSEARTH_5: //CSM SV update to MCC-6 update
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.EI - 23.0 * 3600.0 - 20.0 * 60.0), 5, MST_J3_TRANSEARTH_6);
 		break;
 	case MST_J3_TRANSEARTH_6: //MCC-6 update to Entry PAD update
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 212, MST_J3_TRANSEARTH_7);
 		break;
 	case MST_J3_TRANSEARTH_7: //Entry PAD update to MCC-7 decision update
-		UpdateMacro(UTP_PADONLY, PT_AP11ENT, rtcc->GETEval2(rtcc->calcParams.EI - 6.0*3600.0), 216, MST_J3_TRANSEARTH_8);
+		UpdateMacro(UTP_PADONLY, PT_AP11ENT, rtcc->GETEval2(rtcc->calcParams.EI - 4.0*3600.0 - 30.0*60.0), 216, MST_J3_TRANSEARTH_8);
 		break;
 	case MST_J3_TRANSEARTH_8: //MCC-7 decision update to MCC-7 update
-		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.EI - 4.0*3600.0 - 35.0*60.0), 213, MST_J3_TRANSEARTH_9);
+		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 5.0*60.0, 213, MST_J3_TRANSEARTH_9);
 		break;
 	case MST_J3_TRANSEARTH_9: //MCC-7 update to Entry PAD update
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 214, MST_J3_TRANSEARTH_10);

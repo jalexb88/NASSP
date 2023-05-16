@@ -3931,7 +3931,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 205: //EI Evaluation
 	case 210: //MCC-5 UPDATE
-	case 211: //PRELIMINARY MCC-6 UPDATE
 	case 212: //MCC-6 UPDATE
 	case 213: //MCC-7 DECISION
 	case 214: //MCC-7 UPDATE
@@ -3947,7 +3946,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (fcn == 210)
 		{
-			MCCtime = calcParams.TEI + 15.0*3600.0;
+			MCCtime = calcParams.TEI + 17.0*3600.0;
 			sprintf(manname, "MCC-5");
 		}
 		else if (fcn == 211 || fcn == 212)
@@ -3975,13 +3974,22 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			MCCtime = OrbMech::GETfromMJD(sv.MJD, CalcGETBase());
 		}
 
-		entopt.entrylongmanual = false;
-		entopt.ATPLine = 0; //MPL
+		if (mcc->MoonRev >= 76)
+		{
+			entopt.entrylongmanual = true;
+			entopt.lng = PZREAP.PTPLongitude[0]; //EOM
+		}
+		else
+		{
+			entopt.entrylongmanual = false;
+			entopt.ATPLine = 0; //MPL
+		}
+
 		entopt.enginetype = RTCC_ENGINETYPE_CSMSPS;
 		entopt.RV_MCC = sv;
 		entopt.TIGguess = MCCtime;
 		entopt.vessel = calcParams.src;
-		entopt.r_rbias = 1250.0;
+		entopt.r_rbias = 1190.0;
 
 		if (calcParams.src->DockingStatus(0) == 1)
 		{
@@ -4046,7 +4054,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 				if (scrubbed)
 				{
 					//Entry prediction without maneuver
-					EntryUpdateCalc(sv, 1250.0, true, &res);
+					EntryUpdateCalc(sv, 1190.0, true, &res);
 
 					res.dV_LVLH = _V(0, 0, 0);
 					res.P30TIG = entopt.TIGguess;
