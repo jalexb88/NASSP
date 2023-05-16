@@ -1169,7 +1169,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		HA_max = HA_tgt + 1.0*1852.0;
 		HA_min = HA_tgt - 1.0*1852.0;
 
-		orbopt.AltRef = 1;
 		orbopt.ManeuverCode = RTCC_GMP_HBT;
 		orbopt.sv_in = sv_e;
 		orbopt.H_A = HA_tgt;
@@ -1535,7 +1534,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			sv_e = StateVectorCalcEphem(calcParams.src);
 
-			orbopt.AltRef = 1;
 			orbopt.sv_in = sv_e;
 			orbopt.TIG_GET = calcParams.DOI - 1.0*3600.0;
 
@@ -4231,6 +4229,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.P30TIG = TimeofIgnition;
 		entopt.REFSMMAT = REFSMMAT;
 		entopt.sv0 = sv;
+		entopt.SxtStarCheckAttitudeOpt = false;
 
 		LunarEntryPAD(&entopt, *form);
 		sprintf(form->Area[0], "MIDPAC");
