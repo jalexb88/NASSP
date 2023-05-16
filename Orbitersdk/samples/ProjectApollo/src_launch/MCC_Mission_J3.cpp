@@ -386,10 +386,10 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADONLY, PT_AP11P76PAD, rtcc->GETEval2(rtcc->calcParams.SEP + 25.0*60.0), 57, MST_J3_LUNAR_ORBIT_PDI_DAY_12);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_12: //AGS K-factor to REV 12 LS TCA
-		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 2.0*60.0, 55, MST_J3_LUNAR_ORBIT_PDI_DAY_13);
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 2.0*60.0, 55, MST_J3_LUNAR_ORBIT_PDI_DAY_13);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_13: //REV 12 LS TCA to CIRC burn calculation
-		UpdateMacro(UTP_NONE, PT_NONE, MoonRev >= 12 && MoonRevTime > 47.0*60.0, 56, MST_J3_LUNAR_ORBIT_PDI_DAY_14);
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, MoonRev >= 12 && MoonRevTime > 47.0*60.0, 56, MST_J3_LUNAR_ORBIT_PDI_DAY_14);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_14: //CIRC burn calculation to P76 PAD for CIRC
 		UpdateMacro(UTP_NONE, PT_NONE, true, 39, MST_J3_LUNAR_ORBIT_PDI_DAY_15);
@@ -587,7 +587,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, SubStateTime > 10.0*60.0, 1, MST_J3_LUNAR_ORBIT_ASCENT_DAY_7);
 		break;
 	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_7: //P57 Liftoff time to P22 Acq time
-		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 3.0*60.0, 98, MST_J3_LUNAR_ORBIT_ASCENT_DAY_8);
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 3.0*60.0, 98, MST_J3_LUNAR_ORBIT_ASCENT_DAY_8);
 		break;
 	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_8: //P22 Acq time to LGC CSM SV update
 		UpdateMacro(UTP_PADONLY, PT_LMP22ACQPAD, SubStateTime > 3.0*60.0, 59, MST_J3_LUNAR_ORBIT_ASCENT_DAY_9);
@@ -632,7 +632,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, SubStateTime > 13.0*60.0, 103, MST_J3_LUNAR_ORBIT_ASCENT_DAY_22);
 		break;
 	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_22: //AGS K-factor + RLS to Ascent determination
-		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff + 10.0), 55, MST_J3_LUNAR_ORBIT_ASCENT_DAY_23);
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, rtcc->GETEval2(rtcc->calcParams.LunarLiftoff + 10.0), 55, MST_J3_LUNAR_ORBIT_ASCENT_DAY_23);
 		break;
 	case MST_J3_LUNAR_ORBIT_ASCENT_DAY_23: //Ascent determination to LM Liftoff Evaluation
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.Insertion + 30.0), 108, MST_J3_LUNAR_ORBIT_ASCENT_DAY_24, scrubbed, rtcc->GETEval2(rtcc->calcParams.Insertion + 30.0), MST_J3_LUNAR_ORBIT_ASCENT_COELLIPTIC_1);

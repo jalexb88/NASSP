@@ -1882,6 +1882,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 55: //K-FACTOR
 	{
+		GENERICPAD * form = (GENERICPAD *)pad;
+
 		double KFactor, agsclockzero;
 
 		int hh, mm;
@@ -1898,11 +1900,13 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		agsclockzero = GETfromGMT(GetAGSClockZero());
 		OrbMech::SStoHHMMSS(agsclockzero, hh, mm, ss);
 
-		sprintf(upMessage, "K-FACTOR: %03d:%02d:%.2lf", hh, mm, ss);
+		sprintf(form->paddata, "K-FACTOR: %03d:%02d:%.2lf", hh, mm, ss);//
 	}
 	break;
 	case 56: //REV 12 LS TCA
 	{
+		GENERICPAD * form = (GENERICPAD *)pad;
+
 		double t_lng, ttoLNG, GET;
 		SV sv;
 
@@ -1916,7 +1920,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		GET = (sv.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 		OrbMech::SStoHHMMSS(GET, hh, mm, ss);
 
-		sprintf(upMessage, "REV 12 LS TCA: %d:%d:%.2lf", hh, mm, ss);
+		sprintf(form->paddata, "REV 12 LS TCA: %d:%d:%.2lf", hh, mm, ss);
 	}
 	break;
 	case 57: //P76 PAD for DOI-2
@@ -2029,9 +2033,9 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			}
 
 			//Updated landing site vector after processing landmark tracking data
-			BZLAND.rad[RTCC_LMPOS_BEST] = 937.08*1852.0;
-			BZLAND.lat[RTCC_LMPOS_BEST] = 20.164*RAD;
-			BZLAND.lng[RTCC_LMPOS_BEST] = 30.750*RAD;
+			//BZLAND.rad[RTCC_LMPOS_BEST] = 937.08*1852.0;
+			//BZLAND.lat[RTCC_LMPOS_BEST] = 20.164*RAD;
+			//BZLAND.lng[RTCC_LMPOS_BEST] = 30.750*RAD;
 		}
 		else if (fcn == 64) //LANDMARK TRACKING PAD (17-1)
 		{
@@ -2622,12 +2626,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 98: //P57 Liftoff time
 	{
+		GENERICPAD * form = (GENERICPAD *)pad;
+
 		int hh, mm;
 		double ss;
 
 		OrbMech::SStoHHMMSS(calcParams.LunarLiftoff, hh, mm, ss);
 
-		sprintf(upMessage, "P57 Liftoff time: %03d:%02d:%0.2lf", hh, mm, ss);
+		sprintf(form->paddata, "P57 Liftoff time: %03d:%02d:%0.2lf", hh, mm, ss);
 	}
 	break;
 	case 99: //LIFTOFF TIME INITIAL CALCULATION
@@ -3224,7 +3230,19 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		sv2.sv = coast(sv1.sv, -30.0*60.0);
 		LunarOrbitMapUpdate(sv2.sv, upd_ellip);
 
-		form->Rev = 1;
+		if (fcn == 128)
+		{
+			form->Rev = 1;
+		}
+		else if (fcn == 129)
+		{
+			form->Rev = 3;
+		}
+		else
+		{
+			form->Rev = mcc->MoonRev + 1;
+		}
+
 		form->type = 2;
 		form->AOSGET = upd_hyper.AOSGET;
 		form->LOSGET = upd_hyper.LOSGET;
