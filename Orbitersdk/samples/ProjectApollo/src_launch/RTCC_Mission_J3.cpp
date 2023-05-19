@@ -1,6 +1,6 @@
 /****************************************************************************
 This file is part of Project Apollo - NASSP
-Copyright 2022
+Copyright 2023
 
 RTCC Calculations for Mission J3
 
@@ -285,7 +285,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		TLIBase = calcParams.TLI;
 		TIG = TLIBase + 90.0*60.0;
 		entopt.ATPLine = 2; //AOL
-		entopt.r_rbias = 1190.0;
+		entopt.r_rbias = PZREAP.RRBIAS;
 
 		sv1.mass = PZMPTCSM.mantable[1].CommonBlock.CSMMass;
 		sv1.gravref = hEarth;
@@ -343,7 +343,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.enginetype = RTCC_ENGINETYPE_CSMSPS;
 		entopt.type = 1;
 		entopt.vessel = calcParams.src;
-		entopt.r_rbias = 1190.0;
+		entopt.r_rbias = PZREAP.RRBIAS;
 
 		entopt.TIGguess = form->GETI[0] = OrbMech::HHMMSSToSS(9, 0, 0);
 		entopt.t_Z = OrbMech::HHMMSSToSS(33.0, 49.0, 0.0);
@@ -423,7 +423,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.enginetype = RTCC_ENGINETYPE_CSMSPS;
 		entopt.type = 1;
 		entopt.vessel = calcParams.src;
-		entopt.r_rbias = 1190.0;
+		entopt.r_rbias = PZREAP.RRBIAS;
 
 		if (fcn == 16)
 		{
@@ -673,7 +673,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.RV_MCC = sv;
 		entopt.TIGguess = calcParams.LOI - 5.0*3600.0;
 		entopt.vessel = calcParams.src;
-		//PZREAP.RRBIAS = 1190.0;
 		entopt.t_zmin = 153.0*3600.0;
 		entopt.entrylongmanual = false;
 		entopt.ATPLine = 0; //MPL
@@ -801,7 +800,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (loierr == false)
 		{
-			//Choose solution with the lowest LOI DV
+			//Choose solution with the correct HPC
 			double solht1, solht2;
 			solht1 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
 			solht2 = PZLRBTI.sol[2].H_PC - PZLRBTI.HPLOI1;
@@ -950,7 +949,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		//Calculate LOI REFSMMAT
 		PMMLRBTI(sv_e);
 
-		//Choose solution with the lowest LOI DV
+		//Choose solution with the correct HPC
 		double solht1, solht2;
 		solht1 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
 		solht2 = PZLRBTI.sol[2].H_PC - PZLRBTI.HPLOI1;
@@ -982,7 +981,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.RV_MCC = sv1;
 		entopt.vessel = calcParams.src;
 		entopt.TIGguess = calcParams.LOI + 2.0*3600.0;
-		//PZREAP.RRBIAS = 1190.0;
 		PZREAP.VRMAX = 37500.0;
 		entopt.entrylongmanual = false;
 		entopt.ATPLine = 0; //MPL
@@ -1060,7 +1058,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		PMMLRBTI(sv);
 
-		//Choose solution with the lowest LOI-1 DV
+		//Choose solution with the correct HPC
 		double solht1, solht2;
 		solht1 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
 		solht2 = PZLRBTI.sol[2].H_PC - PZLRBTI.HPLOI1;
@@ -1338,7 +1336,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (coe.e > 0.7)
 		{
-			sprintf(upMessage, "LOI-1 scrubbed, burn PC+2 PAD");
+			sprintf(upMessage, "LOI scrubbed, burn PC+2 PAD");
 			scrubbed = true;
 			mcc->AbortMode = 6;
 		}
@@ -4005,7 +4003,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		entopt.RV_MCC = sv;
 		entopt.TIGguess = MCCtime;
 		entopt.vessel = calcParams.src;
-		entopt.r_rbias = 1190.0;
+		entopt.r_rbias = PZREAP.RRBIAS;
 
 		if (calcParams.src->DockingStatus(0) == 1)
 		{
@@ -4070,7 +4068,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 				if (scrubbed)
 				{
 					//Entry prediction without maneuver
-					EntryUpdateCalc(sv, 1190.0, true, &res);
+					EntryUpdateCalc(sv, PZREAP.RRBIAS, true, &res);
 
 					res.dV_LVLH = _V(0, 0, 0);
 					res.P30TIG = entopt.TIGguess;
