@@ -302,13 +302,13 @@ void MCC::MissionSequence_J3()
 		}
 		break;
 	case MST_J3_LUNAR_ORBIT_LOI_DAY_2: //DOI-1 calculation to Photo PAD (90:45)
-		UpdateMacro(UTP_NONE, PT_NONE, MoonRev >= 1 && MoonRevTime > 30.0*60.0, 29, MST_J3_LUNAR_ORBIT_LOI_DAY_3);
+		UpdateMacro(UTP_NONE, PT_NONE, MoonRev >= 1 && MoonRevTime > 25.0*60.0, 29, MST_J3_LUNAR_ORBIT_LOI_DAY_3);
 		break;
 	case MST_J3_LUNAR_ORBIT_LOI_DAY_3: //Photo PAD (90:45) to Photo PAD (91:20)
-		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 2.0*60.0, 150, MST_J3_LUNAR_ORBIT_LOI_DAY_4);
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 3.0*60.0, 150, MST_J3_LUNAR_ORBIT_LOI_DAY_4);
 		break;
 	case MST_J3_LUNAR_ORBIT_LOI_DAY_4: //Photo PAD (91:20) to landing site REFSMMAT
-		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 2.0*60.0, 151, MST_J3_LUNAR_ORBIT_LOI_DAY_5);
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 3.0*60.0, 151, MST_J3_LUNAR_ORBIT_LOI_DAY_5);
 		break;
 	case MST_J3_LUNAR_ORBIT_LOI_DAY_5: //landing site REFSMMAT to DOI-1 Update
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 2 && MoonRevTime > 40.0*60.0, 31, MST_J3_LUNAR_ORBIT_LOI_DAY_6);

@@ -827,7 +827,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			}
 
 			//Maneuver execution criteria
-			if (h_peri > h_peri_tgt - 3.0 && h_peri < h_peri_tgt + 3.0)
+			if (h_peri > h_peri_tgt - 10.0 && h_peri < h_peri_tgt + 5.0)
 			{
 				if (h_node > h_node_tgt - 10.0 && h_node < h_node_tgt + 15.0)
 				{
