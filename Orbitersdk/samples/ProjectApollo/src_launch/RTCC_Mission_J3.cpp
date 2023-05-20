@@ -1144,7 +1144,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 29: //DOI-1 calculation
 	case 30: //DOI-1 update
 	{
-		double P30TIG, SV_GET, Peri_GET, LONGP_tgt, HA_tgt, HA_max, HA_min, dlp, dlp_last, TIG_imp, t_P;
+		double P30TIG, SV_GET, Peri_GET, LONGP_tgt, HA_tgt, HA_max, HA_min, dlp, dlp_last, TIG_imp, t_P, h_peri;
 		VECTOR3 dV_LVLH, dV_imp;
 		SV sv1, sv2, sv_peri;
 		EphemerisData sv_e;
@@ -1154,23 +1154,27 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		sv_e = StateVectorCalcEphem(calcParams.src);
 		sv1 = StateVectorCalc(calcParams.src); //State vector for uplink
 
-		//Find pre DOI-1 periapsis GET
-		double revsfromLOI = 2.0;
+		//Find pre DOI-1 periapsis GET & height
 		SV_GET = OrbMech::GETfromMJD(sv1.MJD, CalcGETBase());
 		t_P = OrbMech::period(sv1.R, sv1.V, OrbMech::mu_Moon);
-		sv2 = coast(sv1, (t_P*revsfromLOI - (SV_GET - calcParams.LOI)));
+		sv2 = coast(sv1, (t_P*PZLOIPLN.REVS1 - (SV_GET - calcParams.LOI)));
 		sv_peri = FindPericynthion(sv2);
 		Peri_GET = OrbMech::GETfromMJD(sv_peri.MJD, CalcGETBase());
+        h_peri = length(sv_peri.R) - OrbMech::R_Moon;
 
-		LONGP_tgt = BZLAND.lng[RTCC_LMPOS_BEST]*DEG + 0.61; //Periapsis 10 degrees west of landing site at PDI
-		HA_tgt = 59.5*1852.0;
+		//Calculate longitude bias to account for time spent from DOI-1 to PDI
+		double DaysDOI1toPDI = double(PZLOIPLN.REVS2) * 2.0 / 24.0;
+		double long_bias = (DaysDOI1toPDI / 28.0) * 360.0;
+
+		LONGP_tgt = BZLAND.lng[RTCC_LMPOS_BEST]*DEG + GZGENCSN.LDPPDescentFlightArc*DEG + long_bias;
+		HA_tgt = max(h_peri + 5.0*1852.0, PZLOIPLN.HA_LLS*1852.0);
 		HA_max = HA_tgt + 1.0*1852.0;
 		HA_min = HA_tgt - 1.0*1852.0;
 
 		orbopt.ManeuverCode = RTCC_GMP_HBT;
 		orbopt.sv_in = sv_e;
 		orbopt.H_A = HA_tgt;
-		orbopt.H_P = 13.17*1852.0;
+		orbopt.H_P = PZLOIPLN.HP_LLS*1852.0;
 		orbopt.TIG_GET = Peri_GET - 2.0*60.0 - 30.0;
 
 		GeneralManeuverProcessor(&orbopt, dV_imp, TIG_imp);
@@ -1289,13 +1293,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			sv1 = sv0;
 		}
 
+		double LOItoLDG = (PZLOIPLN.REVS1 + double(PZLOIPLN.REVS2)) * 2.0 * 3600.0;
+
 		//MED K17
 		GZGENCSN.LDPPPoweredDescentSimFlag = false;
-		GZGENCSN.LDPPDwellOrbits = 0;
 		//MED K16
 		med_k16.Mode = 4;
 		med_k16.Sequence = 1;
-		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + 22.5*3600.0;
+		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + LOItoLDG - 1.5 * 3600.0;
 
 		LunarDescentPlanningProcessor(sv1);
 
@@ -1483,11 +1488,10 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		//MED K17
 		GZGENCSN.LDPPPoweredDescentSimFlag = false;
-		GZGENCSN.LDPPDwellOrbits = 0;
 		//MED K16
 		med_k16.Mode = 4;
 		med_k16.Sequence = 1;
-		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + 22.5*3600.0;
+		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = CZTDTGTU.GETTD - 1.5*3600.0;
 
 		LunarDescentPlanningProcessor(sv);
 
@@ -3461,7 +3465,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
-			sprintf(upMessage, "Liftoff time update required\nAdjust times by: %d:%d:%.2lf", hh, mm, ss);
+			sprintf(upMessage, "Liftoff time update required\nAdjust PAD times by: %d:%d:%.2lf", hh, mm, ss);
 		}
 	}
 	break;
@@ -3515,7 +3519,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
-			sprintf(upMessage, "Liftoff time update required\nAdjust times by: %d:%d:%.2lf", hh, mm, ss);
+			sprintf(upMessage, "Liftoff time update required\nAdjust PAD times by: %d:%d:%.2lf", hh, mm, ss);
 		}
 	}
 	break;
