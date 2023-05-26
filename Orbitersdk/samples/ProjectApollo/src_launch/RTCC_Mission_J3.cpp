@@ -1154,7 +1154,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		sv_e = StateVectorCalcEphem(calcParams.src);
 		sv1 = StateVectorCalc(calcParams.src); //State vector for uplink
 
-		//Find pre DOI-1 periapsis GET & height
+		//Find pre DOI-1 perilune GET & height
 		SV_GET = OrbMech::GETfromMJD(sv1.MJD, CalcGETBase());
 		t_P = OrbMech::period(sv1.R, sv1.V, OrbMech::mu_Moon);
 		sv2 = coast(sv1, (t_P*PZLOIPLN.REVS1 - (SV_GET - calcParams.LOI)));
@@ -1181,13 +1181,12 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		dlp = dlp_last = OrbMech::calculateDifferenceBetweenAngles(LONGP_tgt*RAD, PZGPMDIS.long_P);
 
-		if (abs(dlp*DEG) < 20.0)
+		if (abs(dlp*DEG) < 20.0) //Iterations to find desired perilune longitude
 		{
-			//Iterations to find desired periapsis longitude
 			int n = 0, nmax = 100;
 			double incr = 0.0;
 
-			orbopt.TIG_GET = orbopt.TIG_GET - 30.0;
+			orbopt.TIG_GET -= 30.0;
 
 			//Iterate on TIG
 			while (abs(dlp*DEG) > 0.1 && abs(dlp) <= abs(dlp_last) && orbopt.TIG_GET < Peri_GET - 5.0)
@@ -1203,7 +1202,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 				dlp = OrbMech::calculateDifferenceBetweenAngles(LONGP_tgt*RAD, PZGPMDIS.long_P);
 			}
 
-			//Iterate on apoapsis height
+			//Iterate on apolune height
 			while (abs(dlp*DEG) > 0.1 && PZGPMDIS.HA < HA_max && PZGPMDIS.HA > HA_min && n < nmax)
 			{
 				incr = -dlp * DEG / (abs(dlp*DEG) * 10.0);
@@ -1371,54 +1370,89 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 36: //ABORT CONSTANTS UPDATE
 	{
-		/*AP11AGSACT *form = (AP11AGSACT*)pad;
+		GENERICPAD * form = (GENERICPAD *)pad;
 
 		SV svcm0, svcm1, svlm0, svlm1;
-		double t_sunrise, t_TPI;
-		int emem[14];
+		int emem[14], DEDA224, DEDA225, DEDA226, DEDA305, DEDA662, DEDA673;
+		double t_sunrise, t_TPI, TimeFromDOI;
 		char buffer1[1000];
 
 		PDAPOpt opt;
 		PDAPResults res;
 
+		LEM *l = (LEM*)calcParams.tgt;
+
 		svcm0 = StateVectorCalc(calcParams.src);
 		svlm0 = StateVectorCalc(calcParams.tgt);
 
-		if (mcc->MoonRev >= 13)
+		TimeFromDOI = OrbMech::GETfromMJD(svlm0.MJD, CalcGETBase()) - calcParams.DOI;
+
+		if (TimeFromDOI > 0.0) //PDI-2
 		{
 			svcm1 = svcm0;
 			svlm1 = svlm0;
+
+			opt.dt_CAN = 60.0*60.0;
+			opt.dt_CSI = 180.0*60.0;
+			opt.dt_2CSI = -125.0*60.0;
+			opt.dt_2TPI = -7117.0;
+			opt.h_amin = 133.6*1852.0;
+			t_sunrise = calcParams.PDI + 5.0*3600.0;
+			opt.LongProfileFirst = true;
 		}
 		else
 		{
 			svcm1 = ExecuteManeuver(svcm0, TimeofIgnition, DeltaV_LVLH, 0.0, RTCC_ENGINETYPE_CSMSPS);
 			svlm1 = ExecuteManeuver(svlm0, calcParams.TIGSTORE1, calcParams.DVSTORE1, 0, RTCC_ENGINETYPE_LMRCSMINUS4);
+
+			opt.dt_CAN = 50.0*60.0;
+			opt.dt_CSI = 55.0*60.0;
+			opt.dt_2CSI = 105.0*60.0;
+			opt.dt_2TPI = 7117.0;
+			opt.h_amin = 57.8*1852.0;
+			t_sunrise = calcParams.PDI + 3.0*3600.0;
+			opt.LongProfileFirst = false;
 		}
 
-		t_sunrise = calcParams.PDI + 3.0*3600.0;
 		t_TPI = FindOrbitalSunrise(svcm1, t_sunrise) - 16.0*60.0;
 
+		opt.W_TAPS = l->GetAscentStageMass();
+		opt.W_TDRY = opt.sv_A.mass - calcParams.tgt->GetPropellantMass(calcParams.tgt->GetPropellantHandleByIndex(0));
 		opt.dt_stage = 999999.9;
-		opt.W_TAPS = 4711.0;
-		opt.W_TDRY = 6874.3;
-		opt.dt_step = 20.0;
-		opt.t_TPI = t_TPI;
 		opt.IsTwoSegment = true;
-		opt.REFSMMAT = GetREFSMMATfromAGC(&mcc->lm->agc.vagc, false);
+		opt.REFSMMAT = EZJGMTX3.data[RTCC_REFSMMAT_TYPE_LLD - 1].REFSMMAT;
 		opt.R_LS = OrbMech::r_from_latlong(BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
 		opt.sv_A = svlm1;
 		opt.sv_P = svcm1;
 		opt.TLAND = CZTDTGTU.GETTD;
+		opt.t_TPI = t_TPI;
+		opt.dt_step = 20.0;
 
 		PoweredDescentAbortProgram(opt, res);
 
-		form->DEDA224 = (int)(res.DEDA224 / 0.3048 / 100.0);
-		form->DEDA225 = (int)(res.DEDA225 / 0.3048 / 100.0);
-		form->DEDA226 = (int)(res.DEDA226 / 0.3048 / 100.0);
-		form->DEDA227 = OrbMech::DoubleToDEDA(res.DEDA227 / 0.3048*pow(2, -20), 14);
+		if (TimeFromDOI > 0.0)
+		{
+			DEDA224 = (int)(res.J2 / 0.3048 / 100.0);
+			DEDA225 = (int)(res.R_amin / 2.0 / 0.3048 / 100.0);
+			DEDA226 = (int)(res.J1 / 0.3048 / 100.0);
+			DEDA305 = (int)((res.Theta_LIM * DEG) * 100.0);
+			DEDA662 = OrbMech::DoubleToDEDA(res.K2 / 0.3048*pow(2, -20), 14);
+			DEDA673 = OrbMech::DoubleToDEDA(res.K1 / 0.3048*pow(2, -20), 14) / 2;
+		}
+		else
+		{
+			DEDA224 = (int)(res.J1 / 0.3048 / 100.0);
+			DEDA225 = (int)(res.R_amin / 2.0 / 0.3048 / 100.0);
+			DEDA226 = (int)(res.J2 / 0.3048 / 100.0);
+			DEDA305 = (int)((res.Theta_LIM * DEG) * 100.0);
+			DEDA662 = OrbMech::DoubleToDEDA(res.K2 / 0.3048*pow(2, -20), 14) / 2;
+			DEDA673 = OrbMech::DoubleToDEDA(res.K1 / 0.3048*pow(2, -20), 14);
+		}
+
+		sprintf(form->paddata, "AGS ABORT CONSTANTS\n224 %+06d\n225 %+06d\n226 %+06d\n305 %+06d\n662 %+06d\n673 %+06d", DEDA224, DEDA225, DEDA226, DEDA305, DEDA662, DEDA673);
 
 		emem[0] = 16;
-		emem[1] = 2550;
+		emem[1] = 2545;
 		emem[2] = OrbMech::DoubleToBuffer(res.J1, 23, 1);
 		emem[3] = OrbMech::DoubleToBuffer(res.J1, 23, 0);
 		emem[4] = OrbMech::DoubleToBuffer(res.K1*PI2, 23, 1);
@@ -1439,9 +1473,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			// give to mcc
 			strncpy(upString, uplinkdata, 1024 * 3);
 			sprintf(upDesc, "LGC abort constants");
-		}*/
-
-		sprintf(upMessage, "Use abort constants in the checklist");
+		}
 	}
 	break;
 	case 37: //UNDOCK & SEPARATION MANEUVER
@@ -1620,7 +1652,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 45: //TEI-26 UPDATE
 	case 46: //TEI-38 UPDATE
 	case 47: //TEI-49 UPDATE
-	case 48: //TEI-55 UPDATE PRE LOPC
+	case 48: //TEI-55 UPDATE (PRE LOPC)
 	case 49: //TEI-65 UPDATE
 	case 50: //TEI-72 UPDATE
 	case 51: //TEI-75 UPDATE (PRELIM)

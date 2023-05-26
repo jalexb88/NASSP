@@ -359,7 +359,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADONLY, PT_AP11LMMNV, SubStateTime > 5.0*60.0, 38, MST_J3_LUNAR_ORBIT_PDI_DAY_3);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_3: //Abort constants update to LGC activation update
-		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADWITHLGCUPLINK, PT_AP11AGSACT*/, SubStateTime > 5.0*60.0, 36, MST_J3_LUNAR_ORBIT_PDI_DAY_4);
+		UpdateMacro(UTP_PADWITHLGCUPLINK, PT_GENERIC, SubStateTime > 5.0*60.0, 36, MST_J3_LUNAR_ORBIT_PDI_DAY_4);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_4: //LGC activation update to LGC clock sync elvaluation
 		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, true, 35, MST_J3_LUNAR_ORBIT_PDI_DAY_5);
@@ -458,7 +458,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADONLY, PT_AP12LUNSURFPAD, SubStateTime > 3.0*60.0, 73, MST_J3_LUNAR_ORBIT_NO_PDI_6);
 		break;
 	case MST_J3_LUNAR_ORBIT_NO_PDI_6: //Abort constants update to LGC descent target update
-		UpdateMacro(UTP_NONE, PT_NONE/*UTP_PADWITHLGCUPLINK, PT_AP11AGSACT*/, SubStateTime > 3.0*60.0, 36, MST_J3_LUNAR_ORBIT_NO_PDI_7);
+		UpdateMacro(UTP_PADWITHLGCUPLINK, PT_GENERIC, SubStateTime > 3.0*60.0, 36, MST_J3_LUNAR_ORBIT_NO_PDI_7);
 		break;
 	case MST_J3_LUNAR_ORBIT_NO_PDI_7: //LGC descent target update to LGC LM SV update
 		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, true, 76, MST_J3_LUNAR_ORBIT_NO_PDI_8);
