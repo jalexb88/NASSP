@@ -1399,6 +1399,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			opt.h_amin = 133.6*1852.0;
 			t_sunrise = calcParams.PDI + 5.0*3600.0;
 			opt.LongProfileFirst = true;
+			opt.REFSMMAT = GetREFSMMATfromAGC(&mcc->lm->agc.vagc, false);
 		}
 		else
 		{
@@ -1412,6 +1413,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			opt.h_amin = 57.8*1852.0;
 			t_sunrise = calcParams.PDI + 3.0*3600.0;
 			opt.LongProfileFirst = false;
+			opt.REFSMMAT = EZJGMTX3.data[RTCC_REFSMMAT_TYPE_LLD - 1].REFSMMAT;
 		}
 
 		t_TPI = FindOrbitalSunrise(svcm1, t_sunrise) - 16.0*60.0;
@@ -1420,7 +1422,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.W_TDRY = opt.sv_A.mass - calcParams.tgt->GetPropellantMass(calcParams.tgt->GetPropellantHandleByIndex(0));
 		opt.dt_stage = 999999.9;
 		opt.IsTwoSegment = true;
-		opt.REFSMMAT = EZJGMTX3.data[RTCC_REFSMMAT_TYPE_LLD - 1].REFSMMAT;
 		opt.R_LS = OrbMech::r_from_latlong(BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
 		opt.sv_A = svlm1;
 		opt.sv_P = svcm1;
