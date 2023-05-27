@@ -872,15 +872,19 @@ void MCC::MissionSequence_J3()
 			switch (SubState) {
 			case 0:
 			{
-				if (rtcc->GETEval2(OrbMech::HHMMSSToSS(60, 0, 0)))
+				if (rtcc->GETEval2(OrbMech::HHMMSSToSS(65, 0, 0)))
 				{
 					setSubState(13);//Flyby
 				}
 				else
 				{
-					if (rtcc->GETEval2(OrbMech::HHMMSSToSS(45, 0, 0))) //LO+60
+					if (rtcc->GETEval2(OrbMech::HHMMSSToSS(55, 0, 0))) //LO+65
 					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(60, 0, 0);
+						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(65, 0, 0);
+					}
+					if (rtcc->GETEval2(OrbMech::HHMMSSToSS(45, 0, 0))) //LO+55
+					{
+						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(55, 0, 0);
 					}
 					else if (rtcc->GETEval2(OrbMech::HHMMSSToSS(35, 0, 0))) //LO+45
 					{
@@ -894,13 +898,13 @@ void MCC::MissionSequence_J3()
 					{
 						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(25, 0, 0);
 					}
-					else if (rtcc->GETEval2(OrbMech::HHMMSSToSS(8, 0, 0))) //LO+15
+					else if (rtcc->GETEval2(OrbMech::HHMMSSToSS(9, 0, 0))) //LO+15
 					{
 						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(15, 0, 0);
 					}
-					else if (rtcc->GETEval2(rtcc->calcParams.TLI + 90.0*60.0)) //LO+8
+					else if (rtcc->GETEval2(rtcc->calcParams.TLI + 90.0*60.0)) //LO+9
 					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(8, 0, 0);
+						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(9, 0, 0);
 					}
 					else //TLI+90
 					{
