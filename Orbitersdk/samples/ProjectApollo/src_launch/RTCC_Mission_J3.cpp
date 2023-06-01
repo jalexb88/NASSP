@@ -1431,26 +1431,37 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		PoweredDescentAbortProgram(opt, res);
 
-		if (TimeFromDOI > 0.0)
+		DEDA662 = DEDA673 = 0;
+		if (res.K1 < 0.0)
+			DEDA662 = -77777;
+		if (res.K2 < 0.0)
+			DEDA673 = -77777;
+
+		if (res.Theta_LIM < 0.0)
 		{
 			DEDA224 = (int)(res.J2 / 0.3048 / 100.0);
-			DEDA225 = (int)(res.R_amin / 2.0 / 0.3048 / 100.0);
 			DEDA226 = (int)(res.J1 / 0.3048 / 100.0);
-			DEDA305 = (int)((res.Theta_LIM * DEG) * 100.0);
-			DEDA662 = OrbMech::DoubleToDEDA(res.K2 / 0.3048*pow(2, -20), 14);
-			DEDA673 = OrbMech::DoubleToDEDA(res.K1 / 0.3048*pow(2, -20), 14) / 2;
 		}
 		else
 		{
 			DEDA224 = (int)(res.J1 / 0.3048 / 100.0);
-			DEDA225 = (int)(res.R_amin / 2.0 / 0.3048 / 100.0);
 			DEDA226 = (int)(res.J2 / 0.3048 / 100.0);
-			DEDA305 = (int)((res.Theta_LIM * DEG) * 100.0);
-			DEDA662 = OrbMech::DoubleToDEDA(res.K2 / 0.3048*pow(2, -20), 14) / 2;
-			DEDA673 = OrbMech::DoubleToDEDA(res.K1 / 0.3048*pow(2, -20), 14);
 		}
 
+		DEDA225 = (int)(res.R_amin / 2.0 / 0.3048 / 100.0);
+		DEDA305 = (int)((res.Theta_LIM * DEG) * 100.0);
+		DEDA662 += OrbMech::decimal_octal((int)(abs(res.K1 / 0.3048) * 2.0)) / 100;
+		DEDA673 += OrbMech::decimal_octal((int)(abs(res.K2 / 0.3048) * 2.0)) / 100;
+
 		sprintf(form->paddata, "AGS ABORT CONSTANTS\n224 %+06d\n225 %+06d\n226 %+06d\n305 %+06d\n662 %+06d\n673 %+06d", DEDA224, DEDA225, DEDA226, DEDA305, DEDA662, DEDA673);
+
+		//Update 254 & 373 for PDI-2
+		if (TimeFromDOI > 0.0)
+		{
+			double AGSTIG = calcParams.PDI - GETfromGMT(GetAGSClockZero());
+			double AGST2 = calcParams.PDI + 22.0*60.0 + 19.0 - GETfromGMT(GetAGSClockZero());
+			sprintf(form->paddata, "%s\n254 %+06d\n373 %+06d", form->paddata, (int)(AGST2 / 60.0 * 10.0), (int)(AGSTIG / 60.0 * 10.0));
+		}
 
 		emem[0] = 16;
 		emem[1] = 2545;
