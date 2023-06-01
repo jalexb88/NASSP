@@ -1292,14 +1292,12 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			sv1 = sv0;
 		}
 
-		double LOItoLDG = (PZLOIPLN.REVS1 + double(PZLOIPLN.REVS2)) * 2.0 * 3600.0;
-
 		//MED K17
 		GZGENCSN.LDPPPoweredDescentSimFlag = false;
 		//MED K16
 		med_k16.Mode = 4;
 		med_k16.Sequence = 1;
-		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + LOItoLDG - 1.5 * 3600.0;
+		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + 22.5*3600.0;
 
 		LunarDescentPlanningProcessor(sv1);
 
@@ -1535,7 +1533,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		//MED K16
 		med_k16.Mode = 4;
 		med_k16.Sequence = 1;
-		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = CZTDTGTU.GETTD - 1.5*3600.0;
+		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + 22.5*3600.0;
 
 		LunarDescentPlanningProcessor(sv);
 
@@ -1561,7 +1559,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "DOI-2");
-		sprintf(form->remarks, "TIG AGS 373: %+05.1f", AGSTIG / 60.0);
+		sprintf(form->remarks, "\n%+06d TIG AGS 373", (int)(AGSTIG / 60.0 * 10.0));
 	}
 	break;
 	case 39: //CSM CIRC calculation
@@ -2271,7 +2269,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "No PDI +12 ABORT");
-		sprintf(form->remarks, "TIG 373: %+05.1f\nDVX NO DOI-2: %+07.1f", AGSTIG / 60.0, dvx2);
+		sprintf(form->remarks, "\n%+06d TIG 373\n%+07.1f DVX NO DOI-2", (int)(AGSTIG / 60.0 * 10.0), dvx2);
 		form->type = 1;
 		form->t_CSI = round(t_CSI);
 		form->t_TPI = round(t_TPI);
@@ -2961,7 +2959,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->TIG_2 = calcParams.TIGSTORE1;
 		form->LMWeight = m0 / 0.45359237;
 		form->CSMWeight = m1 / 0.45359237;
-		sprintf(form->remarks, "\n373 TPI: %+05.1f\nCSM HA: %+05.1f\nCSM HP: %+05.1f", AGSTPI / 60.0, (apo - OrbMech::R_Moon) / 1852.0, (peri - OrbMech::R_Moon) / 1852.0);
+		sprintf(form->remarks, "\n%+06d 373 TPI\n%+05.1f CSM HA\n%+05.1f CSM HP", (int)(AGSTPI / 60.0 * 10.0), (apo - OrbMech::R_Moon) / 1852.0, (peri - OrbMech::R_Moon) / 1852.0);
 	}
 	break;
 	case 106: //NOMINAL CSI PAD
@@ -3408,7 +3406,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "No PDI +12 ABORT");
-		sprintf(form->remarks, "TIG 373: %+05.1f", AGSTIG / 60.0);
+		sprintf(form->remarks, "\n%+06d TIG 373", (int)(AGSTIG / 60.0 * 10.0));
 		form->type = 1;
 		form->t_CSI = round(t_CSI);
 		form->t_TPI = round(t_TPI);
