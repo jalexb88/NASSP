@@ -814,16 +814,16 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		{
 			//Choose solution with the correct HPC
 			double solht1, solht2;
-			solht1 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
-			solht2 = PZLRBTI.sol[2].H_PC - PZLRBTI.HPLOI1;
+			solht1 = PZLRBTI.sol[0].H_PC - PZLRBTI.HPLOI1;
+			solht2 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
 
 			if (abs(solht1) > abs(solht2))
 			{
-				loisol = 2;
+				loisol = 1;
 			}
 			else
 			{
-				loisol = 1;
+				loisol = 0;
 			}
 
 			h_peri = PZLRBTI.h_pc;
@@ -963,16 +963,16 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		//Choose solution with the correct HPC
 		double solht1, solht2;
-		solht1 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
-		solht2 = PZLRBTI.sol[2].H_PC - PZLRBTI.HPLOI1;
+		solht1 = PZLRBTI.sol[0].H_PC - PZLRBTI.HPLOI1;
+		solht2 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
 
 		if (abs(solht1) > abs(solht2))
 		{
-			loisol = 2;
+			loisol = 1;
 		}
 		else
 		{
-			loisol = 1;
+			loisol = 0;
 		}
 
 		tig = GETfromGMT(PZLRBELM.sv_man_bef[loisol].GMT);
@@ -1072,16 +1072,16 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		//Choose solution with the correct HPC
 		double solht1, solht2;
-		solht1 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
-		solht2 = PZLRBTI.sol[2].H_PC - PZLRBTI.HPLOI1;
+		solht1 = PZLRBTI.sol[0].H_PC - PZLRBTI.HPLOI1;
+		solht2 = PZLRBTI.sol[1].H_PC - PZLRBTI.HPLOI1;
 
 		if (abs(solht1) > abs(solht2))
 		{
-			loisol = 2;
+			loisol = 1;
 		}
 		else
 		{
-			loisol = 1;
+			loisol = 0;
 		}
 
 		tig = GETfromGMT(PZLRBELM.sv_man_bef[loisol].GMT);
