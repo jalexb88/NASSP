@@ -350,10 +350,10 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADONLY, PT_AP11MNV, SubStateTime > 5.0*60.0, 44, MST_J3_LUNAR_ORBIT_LOI_DAY_18);
 		break;
 	case MST_J3_LUNAR_ORBIT_LOI_DAY_18: //LM DAP load to CSM SV update
-		UpdateMacro(UTP_PADONLY, PT_AP10DAPDATA, MoonRev >= 10 && MoonRevTime > 35.0*60.0, 9, MST_J3_LUNAR_ORBIT_PDI_DAY_1);
+		UpdateMacro(UTP_PADONLY, PT_AP10DAPDATA, rtcc->GETEval2(rtcc->calcParams.DOI - 5.0*3600.0), 9, MST_J3_LUNAR_ORBIT_PDI_DAY_1);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_1: //CSM SV update to DOI-2 update
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, MoonRev >= 11 && MoonRevTime > 30.0*60.0, 5, MST_J3_LUNAR_ORBIT_PDI_DAY_2);
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.DOI - 3.0*3600.0 - 10.0*60.0), 5, MST_J3_LUNAR_ORBIT_PDI_DAY_2);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_2: //DOI-2 update to Abort constants update
 		UpdateMacro(UTP_PADONLY, PT_AP11LMMNV, SubStateTime > 5.0*60.0, 38, MST_J3_LUNAR_ORBIT_PDI_DAY_3);

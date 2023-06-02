@@ -1292,12 +1292,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			sv1 = sv0;
 		}
 
+		double LOItoLDG = (PZLOIPLN.REVS1 + double(PZLOIPLN.REVS2)) * 2.0 * 3600.0;
+
 		//MED K17
 		GZGENCSN.LDPPPoweredDescentSimFlag = false;
 		//MED K16
 		med_k16.Mode = 4;
 		med_k16.Sequence = 1;
-		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + 22.5*3600.0;
+		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + LOItoLDG - 1.5 * 3600.0;
 
 		LunarDescentPlanningProcessor(sv1);
 
@@ -1533,7 +1535,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		//MED K16
 		med_k16.Mode = 4;
 		med_k16.Sequence = 1;
-		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.LOI + 22.5*3600.0;
+		med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = CZTDTGTU.GETTD - 1.5*3600.0;
 
 		LunarDescentPlanningProcessor(sv);
 
