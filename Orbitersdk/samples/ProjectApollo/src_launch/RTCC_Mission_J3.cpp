@@ -375,10 +375,22 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->SepATT = DMTBuffer[0].IMUAtt;
 		form->ExtATT = OrbMech::imulimit(_V(300.0 - form->SepATT.x, form->SepATT.y + 180.0, 360.0 - form->SepATT.z));
 
-		//Add Ordeal data (fix me)
-		double R2 = 306.0; //R2 Ign, must be calculated dynamically based on launch delay
-		int yaw = 0; // Opportunity 1 = 0, Opportunity 2 = 3
-		sprintf(form->remarks, "\nXX%04.1f R2 Align\nXX%04.1f R2 Ign\nXX57:10 ORDEAL Start\nXXX00%d YAW", R2, R2 + 6.0, yaw);
+		//Add Ordeal data
+		double delay, R2;
+		int yaw;
+		delay = GetCMCClockZero() - NominalLaunchGMT;
+		if (GETEval2(3.0*3600.0))
+		{
+			R2 = 271.0; //From TLI cheklist
+			yaw = 3;
+		}
+		else
+		{
+			R2 = 271.5; //From TLI cheklist
+			yaw = 0;
+		}
+		R2 += 0.00359375 * delay; //Factor is real PAD R2 Ign minus nominal R2 Ign divided by real Apollo 17 launch delay (2h40)
+		sprintf(form->remarks, "\nXX%04.1f R2 Align\nXX%04.1f R2 Ign\nXX57:10 ORDEAL Start\nXXX00%d YAW", R2 + 6.0, R2, yaw);
 
 		//Delete maneuvers from MPT
 		GMGMED("M62,CSM,1,D;");
