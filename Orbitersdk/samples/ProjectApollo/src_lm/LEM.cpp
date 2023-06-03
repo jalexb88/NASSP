@@ -624,6 +624,12 @@ void LEM::Init()
 		dockingLightsPos[i] = _V(0, 0, 0);
 	}
 
+	arot_save = _V(0, 0, 0, 0);
+	lng_save = 0.0;
+	lat_save = 0.0;
+	hdg_save = 0.0;
+	pos_saved = false;
+
 	//
 	// VAGC Mode settings
 	//
@@ -1332,8 +1338,43 @@ void LEM::clbkPreStep (double simt, double simdt, double mjd) {
 			VcInfoActive = false;
 		}
 	}
-}
 
+	//This code keeps the LM stable on the lunar surface on all types of slopes/terrain
+	if (stage == 1 && GetAltitude(ALTMODE_GROUND) < 4.0)
+	{
+		VESSELSTATUS2 lmV2;
+		memset(&lmV2, 0, sizeof(lmV2));
+		lmV2.version = 2;
+		GetStatusEx(&lmV2);
+
+		if (pos_saved == true)
+		{
+			if (GetThrusterLevel(th_hover[0]) > 0.0)
+			{
+				pos_saved = false;
+			}
+			else if (lmV2.status == 0)
+			{
+				lmV2.status = 1;
+				lmV2.arot.x = arot_save.x;
+				lmV2.arot.y = arot_save.y;
+				lmV2.arot.z = arot_save.z;
+				lmV2.vrot.x = arot_save.w;
+				lmV2.surf_lng = lng_save;
+				lmV2.surf_lat = lat_save;
+				lmV2.surf_hdg = hdg_save;
+
+				DefSetStateEx(&lmV2);
+			}
+		}
+		else if (pos_saved == false && GetThrusterLevel(th_hover[0]) < 0.01)
+		{
+			SaveLandedPos(&lmV2);
+			pos_saved = true;
+		}
+	}
+	sprintf(oapiDebugString(), "ALT: %f", GetAltitude(ALTMODE_GROUND));
+}
 
 void LEM::clbkPostStep(double simt, double simdt, double mjd)
 {
@@ -2494,4 +2535,65 @@ void LEM::CalculatePMIandCOG(VECTOR3 &PMI, VECTOR3 &COG)
 		//PMI = _V(2.8, 2.29, 2.37);
 		//COG = _V(0, 0, 0);
 	}
+}
+
+void LEM::SaveLandedPos(VESSELSTATUS2* v)
+{
+	double rt = oapiGetSize(GetSurfaceRef());
+	double moon_circ = rt * 2 * PI;
+	double each_deg = moon_circ / 360;
+
+	double lng, lat, hdg;
+	lng = lng_save = v->surf_lng;
+	lat = lat_save = v->surf_lat;
+	hdg = hdg_save = v->surf_hdg;
+
+	VECTOR3 ant_dx_pos = _V(0.95, 0, 1.55);
+	double ant_dx_dlat = ((ant_dx_pos.z * cos(hdg) - ant_dx_pos.x * sin(hdg)) / each_deg) * RAD;
+	double ant_dx_dlng = ((ant_dx_pos.z * sin(hdg) + ant_dx_pos.x * cos(hdg)) / each_deg) * RAD;
+	double elev_ant_dx = oapiSurfaceElevation(GetSurfaceRef(), lng + ant_dx_dlng, lat + ant_dx_dlat);
+
+	VECTOR3 ant_sx_pos = _V(-0.95, 0, 1.55);
+	double ant_sx_dlat = ((ant_sx_pos.z * cos(hdg) - ant_sx_pos.x * sin(hdg)) / each_deg) * RAD;
+	double ant_sx_dlng = ((ant_sx_pos.z * sin(hdg) + ant_sx_pos.x * cos(hdg)) / each_deg) * RAD;
+	double elev_ant_sx = oapiSurfaceElevation(GetSurfaceRef(), lng + ant_sx_dlng, lat + ant_sx_dlat);
+
+	VECTOR3 post_pos = _V(0, 0, -1.55);
+	double post_dlat = ((+post_pos.z * cos(hdg)) / each_deg) * RAD;
+	double post_dlng = ((+post_pos.z * sin(hdg)) / each_deg) * RAD;
+	double elev_post = oapiSurfaceElevation(GetSurfaceRef(), lng + post_dlng, lat + post_dlat);
+
+	double roll_angle;
+	double pitch_angle;
+	roll_angle = atan2(elev_ant_dx - elev_ant_sx, ant_dx_pos.x - ant_sx_pos.x);
+	pitch_angle = atan2(-elev_post + ((elev_ant_dx + elev_ant_sx) * 0.5), ant_dx_pos.z - post_pos.z);
+
+	MATRIX3 rot1 = RotationMatrix(_V(0 * RAD, (90 * RAD - lng), 0 * RAD), TRUE);
+	MATRIX3 rot2 = RotationMatrix(_V(-lat + 0 * RAD, 0, 0 * RAD), TRUE);
+	MATRIX3 rot3 = RotationMatrix(_V(0, 0, 180 * RAD + hdg), TRUE);
+
+	MATRIX3 rot4 = RotationMatrix(_V(90 * RAD - pitch_angle, 0, roll_angle), TRUE);
+	MATRIX3 RotMatrix_Def = mul(rot1, mul(rot2, mul(rot3, rot4)));
+
+	arot_save.x = atan2(RotMatrix_Def.m23, RotMatrix_Def.m33);
+	arot_save.y = -asin(RotMatrix_Def.m13);
+	arot_save.z = atan2(RotMatrix_Def.m12, RotMatrix_Def.m11);
+	arot_save.w = 3.5;
+}
+
+//From GeneralVehicle by fred18
+MATRIX3 LEM::RotationMatrix(VECTOR3 angles, bool xyz = FALSE)
+{
+	MATRIX3 m;
+	MATRIX3 RM_X, RM_Y, RM_Z;
+	RM_X = _M(1, 0, 0, 0, cos(angles.x), -sin(angles.x), 0, sin(angles.x), cos(angles.x));
+	RM_Y = _M(cos(angles.y), 0, sin(angles.y), 0, 1, 0, -sin(angles.y), 0, cos(angles.y));
+	RM_Z = _M(cos(angles.z), -sin(angles.z), 0, sin(angles.z), cos(angles.z), 0, 0, 0, 1);
+	if (!xyz) {
+		m = mul(RM_Z, mul(RM_Y, RM_X));
+	}
+	else {
+		m = mul(RM_X, mul(RM_Y, RM_Z));
+	}
+	return m;
 }

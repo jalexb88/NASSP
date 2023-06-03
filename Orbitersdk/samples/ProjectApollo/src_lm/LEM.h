@@ -545,6 +545,9 @@ public:
 	void PanelRefreshForwardHatch();
 	void PanelRefreshOverheadHatch();
 
+	void SaveLandedPos(VESSELSTATUS2* v);
+	MATRIX3 RotationMatrix(VECTOR3 angles, bool xyz);
+
 	// Panel SDK
 	void SetPipeMaxFlow(char *pipe, double flow);
 	h_Pipe* GetLMTunnelPipe();
@@ -1598,6 +1601,12 @@ protected:
 
 	UINT stage;
 	int status;
+
+	VECTOR4 arot_save;
+	double lng_save;
+	double lat_save;
+	double hdg_save;
+	bool pos_saved;
 
 	//
 	// Panel flash.
