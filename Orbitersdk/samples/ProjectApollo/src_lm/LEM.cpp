@@ -1373,7 +1373,6 @@ void LEM::clbkPreStep (double simt, double simdt, double mjd) {
 			pos_saved = true;
 		}
 	}
-	sprintf(oapiDebugString(), "ALT: %f", GetAltitude(ALTMODE_GROUND));
 }
 
 void LEM::clbkPostStep(double simt, double simdt, double mjd)
