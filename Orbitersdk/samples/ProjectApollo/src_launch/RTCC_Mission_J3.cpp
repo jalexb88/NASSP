@@ -3481,7 +3481,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		BZUSEVEC.data[7].Vector = svlgc;
 		BZUSEVEC.data[7].VectorCode.assign("LLHU001");
 
-		med_s80.VEH = RTCC_MPT_CSM;
+		med_s80.VEH = RTCC_MPT_LM;
 		med_s80.time = 0;
 		med_s80.REF = BODY_MOON;
 		med_s80.VID[0] = "APIC001";
