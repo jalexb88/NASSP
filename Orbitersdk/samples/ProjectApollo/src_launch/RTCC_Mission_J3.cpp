@@ -2165,6 +2165,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		PDI_PAD(&opt, *form);
 
 		form->Att = _V(form->Att.x, form->Att.y, 290.0);
+
+		calcParams.PDI = form->GETI;
 	}
 	break;
 	case 71: //PDI ABORT PAD
@@ -2443,6 +2445,10 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		{
 			sprintf(upMessage, "Recycle to next PDI attempt");
 			scrubbed = true;
+		}
+		else
+		{
+			sprintf(upMessage, "1-69 UPDATE: %+06d", (int)calcParams.DVSTORE1.y);
 		}
 	}
 	break;
@@ -3426,6 +3432,66 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->t_TPI = round(t_TPI);
 	}
 	break;
+	case 135: // NOUN 69 CALCULATION
+	{
+		agc_t* vagc;
+		LEM *lem = (LEM *)calcParams.tgt;
+		vagc = &lem->agc.vagc;
+
+		unsigned short SVoct[16];
+		int SVadd = 01626;
+
+		for (int i = 0; i < 14; i++)
+		{
+			SVoct[i] = vagc->Erasable[0][SVadd + i];
+		}
+		SVoct[14] = vagc->Erasable[0][SVadd + 38];
+		SVoct[15] = vagc->Erasable[0][SVadd + 39];
+
+		MATRIX3 Rot;
+		VECTOR3 R, V;
+		double GET;
+
+		R.x = OrbMech::DecToDouble(SVoct[0], SVoct[1]);
+		R.y = OrbMech::DecToDouble(SVoct[2], SVoct[3]);
+		R.z = OrbMech::DecToDouble(SVoct[4], SVoct[5]);
+		V.x = OrbMech::DecToDouble(SVoct[6], SVoct[7])*100.0;
+		V.y = OrbMech::DecToDouble(SVoct[8], SVoct[9])*100.0;
+		V.z = OrbMech::DecToDouble(SVoct[10], SVoct[11])*100.0;
+		GET = (OrbMech::DecToDouble(SVoct[12], SVoct[13]) - OrbMech::DecToDouble(SVoct[14], SVoct[15])) / 100.0*pow(2, 28);
+		R.x *= pow(2, 27);
+		R.y *= pow(2, 27);
+		R.z *= pow(2, 27);
+		V.x *= pow(2, 5);
+		V.y *= pow(2, 5);
+		V.z *= pow(2, 5);
+		Rot = SystemParameters.MAT_J2000_BRCS;
+
+		EphemerisData sv, svlgc;
+		svlgc.R = tmul(Rot, R);
+		svlgc.V = tmul(Rot, V);
+		svlgc.GMT = GET + GetLGCClockZero();
+		svlgc.RBI = BODY_MOON;
+
+		sv = StateVectorCalcEphem(calcParams.tgt);
+
+		BZUSEVEC.data[11].Vector = sv;
+		BZUSEVEC.data[11].VectorCode.assign("APIC001");
+
+		BZUSEVEC.data[7].Vector = svlgc;
+		BZUSEVEC.data[7].VectorCode.assign("LLHU001");
+
+		med_s80.VEH = RTCC_MPT_CSM;
+		med_s80.time = 0;
+		med_s80.REF = BODY_MOON;
+		med_s80.VID[0] = "APIC001";
+		med_s80.VID[1] = "LLHU001";
+
+		BMSVEC();
+
+		calcParams.DVSTORE1 = _V(VectorCompareDisplayBuffer.data[1].U, VectorCompareDisplayBuffer.data[1].V, VectorCompareDisplayBuffer.data[1].W);
+	}
+	break;
 	case 136: //LGC LM SV update (PDI-10)
 	{
 		SV sv0, sv1;
@@ -3517,7 +3583,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			calcParams.LOI += dt;
 
-			calcParams.TLI = dt;
+			calcParams.Phasing = dt;
 
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
@@ -3571,7 +3637,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			CZTDTGTU.GETTD += dt;
 			TimeofIgnition += dt;
 
-			calcParams.TLI = dt;
+			calcParams.Phasing = dt;
 
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
@@ -3583,7 +3649,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	{
 		char buffer[128];
 
-		IncrementAGCLiftoffTime(buffer, RTCC_MPT_CSM, -calcParams.TLI);
+		IncrementAGCLiftoffTime(buffer, RTCC_MPT_CSM, -calcParams.Phasing);
 
 		sprintf(uplinkdata, "%s", buffer);
 		if (upString != NULL) {
@@ -3661,7 +3727,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (!scrubbed)
 		{
-			calcParams.TLI = dt;
+			calcParams.Phasing = dt;
 		}
 	}
 	break;
@@ -3672,11 +3738,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (fcn == 148)
 		{
-			IncrementAGCTime(buffer, RTCC_MPT_CSM, calcParams.TLI);
+			IncrementAGCTime(buffer, RTCC_MPT_CSM, calcParams.Phasing);
 		}
 		else
 		{
-			IncrementAGCTime(buffer, RTCC_MPT_LM, calcParams.TLI);
+			IncrementAGCTime(buffer, RTCC_MPT_LM, calcParams.Phasing);
 		}
 
 		sprintf(uplinkdata, "%s", buffer);

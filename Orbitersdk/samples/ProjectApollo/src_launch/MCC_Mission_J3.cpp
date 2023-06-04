@@ -434,12 +434,15 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, SubStateTime > 3.0*60.0, 64, MST_J3_LUNAR_ORBIT_PRE_LANDING_1);
 		break;
 	case MST_J3_LUNAR_ORBIT_PRE_LANDING_1: //CMC pre PDI uplinks to DOI evaluation
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 5.0*60.0), 137, MST_J3_LUNAR_ORBIT_PRE_LANDING_2);
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 3.0*60.0), 137, MST_J3_LUNAR_ORBIT_PRE_LANDING_2);
 		break;
-	case MST_J3_LUNAR_ORBIT_PRE_LANDING_2: //DOI evaluation to PDI evaluation
-		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 2.0*60.0), 77, MST_J3_LUNAR_ORBIT_PRE_LANDING_3);
+	case MST_J3_LUNAR_ORBIT_PRE_LANDING_2: //DOI evaluation to Noun 69 calculation
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 20.0), 77, MST_J3_LUNAR_ORBIT_PRE_LANDING_3);
 		break;
-	case MST_J3_LUNAR_ORBIT_PRE_LANDING_3: //PDI Evaluation to landing confirmation or PDI-2 calulation
+	case MST_J3_LUNAR_ORBIT_PRE_LANDING_3: //Noun 69 calculation to PDI evaluation
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 2.0*60.0), 135, MST_J3_LUNAR_ORBIT_PRE_LANDING_4);
+		break;
+	case MST_J3_LUNAR_ORBIT_PRE_LANDING_4: //PDI Evaluation to landing confirmation or PDI-2 calulation
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->calcParams.tgt->GroundContact(), 78, MST_J3_LUNAR_ORBIT_POST_LANDING_1, scrubbed, SubStateTime > 10.0*60.0, MST_J3_LUNAR_ORBIT_NO_PDI_1);
 		break;
 	case MST_J3_LUNAR_ORBIT_NO_PDI_1: //PDI-2 calulation to No PDI2+12 PAD
