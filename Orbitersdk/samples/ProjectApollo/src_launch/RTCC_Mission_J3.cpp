@@ -1556,14 +1556,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			orbopt.TIG_GET = calcParams.DOI - 1.0*3600.0;
 
 			//Nominal targets
-			orbopt.ManeuverCode = RTCC_GMP_HBL;
-			orbopt.H_A = 70.3*1852.0;
-			orbopt.H_P = 54.3*1852.0;
-			orbopt.long_D = -142.0*RAD;
+			//orbopt.ManeuverCode = RTCC_GMP_HBL;
+			//orbopt.H_A = 70.3*1852.0;
+			//orbopt.H_P = 54.3*1852.0;
+			//orbopt.long_D = -142.0*RAD;
 
 			//Circularize at 60 NM
-			//orbopt.ManeuverCode = RTCC_GMP_CRH;
-			//orbopt.H_D = 60.0*1852.0;
+			orbopt.ManeuverCode = RTCC_GMP_CRH;
+			orbopt.H_D = 60.0*1852.0;
 
 			GeneralManeuverProcessor(&orbopt, dV_imp, TIG_imp);
 
@@ -2417,7 +2417,10 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 		else
 		{
-			sprintf(upMessage, "1-69 UPDATE: %+06d", (int)calcParams.DVSTORE1.y);
+			if (abs(calcParams.DVSTORE1.y) >= 1000.0)
+			{
+				sprintf(upMessage, "1-69 UPDATE: %+06d", (int)calcParams.DVSTORE1.y);
+			}
 		}
 	}
 	break;
