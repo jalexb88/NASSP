@@ -53,8 +53,11 @@ void MCC::MissionSequence_J3()
 	case MST_J3_EPO4: //TLI PAD to SV Update
 		UpdateMacro(UTP_PADONLY, PT_TLIPAD, SubStateTime > 5.0*60.0, 14, MST_J3_EPO5);
 		break;
-	case MST_J3_EPO5: //SV Update to TLI Evaluation
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TLI + 18.0), 5, MST_J3_TRANSLUNAR1);
+	case MST_J3_EPO5: //SV Update to TLI GO/NO-GO
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TLI - 20.0*60.0), 5, MST_J3_EPO6);
+		break;
+	case MST_J3_EPO6: //TLI GO/NO-GO to TLI Evaluation
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TLI + 18.0), 115, MST_J3_TRANSLUNAR1);
 		break;
 	case MST_J3_TRANSLUNAR1: //TLI Evaluation to SIVB Evasive Maneuver
 		UpdateMacro(UTP_NONE, PT_NONE, true, 15, MST_J3_TRANSLUNAR2, scrubbed, rtcc->GETEval2(rtcc->calcParams.TLI + 30.0*60.0), MST_J3_EPO1);
@@ -374,13 +377,13 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 5, MST_J3_LUNAR_ORBIT_PDI_DAY_8);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_8: //CSM DAP load to Undock/sep PAD
-		UpdateMacro(UTP_PADONLY, PT_AP10DAPDATA, SubStateTime > 5.0*60.0, 7, MST_J3_LUNAR_ORBIT_PDI_DAY_9);
+		UpdateMacro(UTP_PADONLY, PT_AP10DAPDATA, SubStateTime > 3.0*60.0, 7, MST_J3_LUNAR_ORBIT_PDI_DAY_9);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_9: //Undock/sep PAD to P24 track PAD (LDMK 17-x)
-		UpdateMacro(UTP_PADONLY, PT_AP11MNV, SubStateTime > 5.0*60.0, 37, MST_J3_LUNAR_ORBIT_PDI_DAY_10);
+		UpdateMacro(UTP_PADONLY, PT_AP11MNV, SubStateTime > 3.0*60.0, 37, MST_J3_LUNAR_ORBIT_PDI_DAY_10);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_10: //P24 track PAD (LDMK 17-x) to P76 PAD for DOI-2
-		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, SubStateTime > 5.0*60.0, 63, MST_J3_LUNAR_ORBIT_PDI_DAY_11);
+		UpdateMacro(UTP_PADONLY, PT_AP11LMARKTRKPAD, SubStateTime > 3.0*60.0, 63, MST_J3_LUNAR_ORBIT_PDI_DAY_11);
 		break;
 	case MST_J3_LUNAR_ORBIT_PDI_DAY_11: //P76 PAD for DOI-2 to AGS K-factor
 		UpdateMacro(UTP_PADONLY, PT_AP11P76PAD, rtcc->GETEval2(rtcc->calcParams.SEP + 25.0*60.0), 57, MST_J3_LUNAR_ORBIT_PDI_DAY_12);
@@ -437,7 +440,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 3.0*60.0), 137, MST_J3_LUNAR_ORBIT_PRE_LANDING_2);
 		break;
 	case MST_J3_LUNAR_ORBIT_PRE_LANDING_2: //DOI evaluation to Noun 69 calculation
-		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 20.0), 77, MST_J3_LUNAR_ORBIT_PRE_LANDING_3);
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 45.0), 77, MST_J3_LUNAR_ORBIT_PRE_LANDING_3);
 		break;
 	case MST_J3_LUNAR_ORBIT_PRE_LANDING_3: //Noun 69 calculation to PDI evaluation
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI + 2.0*60.0), 135, MST_J3_LUNAR_ORBIT_PRE_LANDING_4);

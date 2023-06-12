@@ -40,6 +40,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	bool preliminary = false;
 	bool scrubbed = false;
 
+	srand((unsigned int)time(NULL));
+
 	double NominalLaunchGMT = OrbMech::HHMMSSToSS(2, 53, 0); //Nominal launch GMT
 
 	switch (fcn) {
@@ -376,21 +378,16 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->ExtATT = OrbMech::imulimit(_V(300.0 - form->SepATT.x, form->SepATT.y + 180.0, 360.0 - form->SepATT.z));
 
 		//Add Ordeal data
-		double delay, R2;
 		int yaw;
-		delay = GetCMCClockZero() - NominalLaunchGMT;
 		if (GETEval2(3.0*3600.0))
 		{
-			R2 = 271.0; //From TLI cheklist
 			yaw = 3;
 		}
 		else
 		{
-			R2 = 271.5; //From TLI cheklist
 			yaw = 0;
 		}
-		R2 += 0.00359375 * delay; //Factor is real PAD R2 Ign minus nominal R2 Ign divided by real Apollo 17 launch delay (2h40)
-		sprintf(form->remarks, "\nXX%04.1f R2 Align\nXX%04.1f R2 Ign\nXX57:10 ORDEAL Start\nXXX00%d YAW", R2 + 6.0, R2, yaw);
+		sprintf(form->remarks, "\nXX%04.1f R2 Align\nXX%04.1f R2 Ign\nXX57:10 ORDEAL Start\nXXX00%d YAW", form->IgnATT.y, form->IgnATT.y - 6.0, yaw);
 
 		//Delete maneuvers from MPT
 		GMGMED("M62,CSM,1,D;");
@@ -578,18 +575,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 				TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
 
-				//Re-iterate node GET for MCC-1
-				bool init = true;
-				F23time = LOIGET - 11.0*60.0;
-				while (PZMCCDIS.data[0].GET_LOI < LOIGET - 5.0 || init)
-				{
-					OrbMech::SStoHHMMSS(F23time, hh, mm, ss);
-					sprintf_s(Buff, "F23,%d:%d:%.2lf,%d:%d:%.2lf;", hh, mm, ss, hh, mm + 10, ss);
-					GMGMED(Buff);
-					TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
-					F23time = F23time + 5.0;
-					if (init) init = false;
-				}
 			}
 		}
 		else // MCC-2
@@ -807,8 +792,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		bool loierr = PMMLRBTI(sv);
 
-		h_peri_tgt = PZSFPTAB.blocks[1].h_pc2 / 1852.0;
-		h_node_tgt = PZSFPTAB.blocks[1].h_nd / 1852.0;
+		h_peri_tgt = PZSFPTAB.blocks[0].h_pc2 / 1852.0;
+		h_node_tgt = PZSFPTAB.blocks[0].h_nd / 1852.0;
 
 		if (loierr == false)
 		{
@@ -839,7 +824,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			}
 
 			//Maneuver execution criteria
-			if (h_peri > h_peri_tgt - 10.0 && h_peri < h_peri_tgt + 5.0)
+			if (h_peri > h_peri_tgt - 5.0 && h_peri < h_peri_tgt + 5.0)
 			{
 				if (h_node > h_node_tgt - 10.0 && h_node < h_node_tgt + 15.0)
 				{
@@ -959,6 +944,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		sv_e.RBI = BODY_MOON;
 
 		//Calculate LOI REFSMMAT
+
 		PMMLRBTI(sv_e);
 
 		//Choose solution with the correct HPC
@@ -1156,7 +1142,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	case 29: //DOI-1 calculation
 	case 30: //DOI-1 update
 	{
-		double P30TIG, SV_GET, Peri_GET, LONGP_tgt, HA_tgt, HA_max, HA_min, dlp, dlp_last, TIG_imp, t_P, h_peri;
+		double P30TIG, SV_GET, Peri_GET, LONGP_tgt, dlp, TIG_imp, t_P;
 		VECTOR3 dV_LVLH, dV_imp;
 		SV sv1, sv2, sv_peri;
 		EphemerisData sv_e;
@@ -1166,67 +1152,41 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		sv_e = StateVectorCalcEphem(calcParams.src);
 		sv1 = StateVectorCalc(calcParams.src); //State vector for uplink
 
-		//Find pre DOI-1 perilune GET & height
+		//Find pre DOI-1 perilune GET
 		SV_GET = OrbMech::GETfromMJD(sv1.MJD, CalcGETBase());
 		t_P = OrbMech::period(sv1.R, sv1.V, OrbMech::mu_Moon);
 		sv2 = coast(sv1, (t_P*PZLOIPLN.REVS1 - (SV_GET - calcParams.LOI)));
 		sv_peri = FindPericynthion(sv2);
 		Peri_GET = OrbMech::GETfromMJD(sv_peri.MJD, CalcGETBase());
-        h_peri = length(sv_peri.R) - OrbMech::R_Moon;
 
 		//Calculate longitude bias to account for time spent from DOI-1 to PDI
-		double DaysDOI1toPDI = double(PZLOIPLN.REVS2) * 2.0 / 24.0;
+		double DaysDOI1toPDI = double(PZLOIPLN.REVS2) * 1.9058 / 24.0;
 		double long_bias = (DaysDOI1toPDI / 28.0) * 360.0;
 
 		LONGP_tgt = BZLAND.lng[RTCC_LMPOS_BEST]*DEG + GZGENCSN.LDPPDescentFlightArc*DEG + long_bias;
-		HA_tgt = max(h_peri + 5.0*1852.0, PZLOIPLN.HA_LLS*1852.0);
-		HA_max = HA_tgt + 1.0*1852.0;
-		HA_min = HA_tgt - 1.0*1852.0;
 
 		orbopt.ManeuverCode = RTCC_GMP_HBT;
 		orbopt.sv_in = sv_e;
-		orbopt.H_A = HA_tgt;
+		orbopt.H_A = 59.0*1852.0;
 		orbopt.H_P = PZLOIPLN.HP_LLS*1852.0;
-		orbopt.TIG_GET = Peri_GET - 2.0*60.0 - 30.0;
+		orbopt.TIG_GET = Peri_GET - 5.0;
 
 		GeneralManeuverProcessor(&orbopt, dV_imp, TIG_imp);
+		dlp = OrbMech::calculateDifferenceBetweenAngles(LONGP_tgt * RAD, PZGPMDIS.long_P);
 
-		dlp = dlp_last = OrbMech::calculateDifferenceBetweenAngles(LONGP_tgt*RAD, PZGPMDIS.long_P);
-
-		if (abs(dlp*DEG) < 20.0) //Iterations to find desired perilune longitude
+		//Iterate TIG backwards from perilune GET to find solution
+		while (abs(dlp * DEG) > 0.2 && orbopt.H_A < 65.0*1852.0)
 		{
-			int n = 0, nmax = 100;
-			double incr = 0.0;
-
-			orbopt.TIG_GET -= 30.0;
-
-			//Iterate on TIG
-			while (abs(dlp*DEG) > 0.1 && abs(dlp) <= abs(dlp_last) && orbopt.TIG_GET < Peri_GET - 5.0)
+			if (PZGPMDIS.HA > orbopt.H_A + 0.1*1852.0)
 			{
-				dlp_last = OrbMech::calculateDifferenceBetweenAngles(LONGP_tgt*RAD, PZGPMDIS.long_P);
-
-				incr = dlp * DEG / abs(dlp*DEG);
-
-				orbopt.TIG_GET += incr;
-
-				GeneralManeuverProcessor(&orbopt, dV_imp, TIG_imp);
-
-				dlp = OrbMech::calculateDifferenceBetweenAngles(LONGP_tgt*RAD, PZGPMDIS.long_P);
+				orbopt.H_A += 0.5 * 1852.0;
+				orbopt.TIG_GET = Peri_GET - 5.0;
 			}
 
-			//Iterate on apolune height
-			while (abs(dlp*DEG) > 0.1 && PZGPMDIS.HA < HA_max && PZGPMDIS.HA > HA_min && n < nmax)
-			{
-				incr = -dlp * DEG / (abs(dlp*DEG) * 10.0);
+			orbopt.TIG_GET -= 1.0;
 
-				orbopt.H_A += incr * 1852.0;
-
-				GeneralManeuverProcessor(&orbopt, dV_imp, TIG_imp);
-
-				dlp = OrbMech::calculateDifferenceBetweenAngles(LONGP_tgt*RAD, PZGPMDIS.long_P);
-
-				n++;
-			}
+			GeneralManeuverProcessor(&orbopt, dV_imp, TIG_imp);
+			dlp = OrbMech::calculateDifferenceBetweenAngles(LONGP_tgt*RAD, PZGPMDIS.long_P);
 		}
 
 		in.CONFIG = 13; //CSM+LM
@@ -1986,7 +1946,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	{
 		AP11P76PAD * form = (AP11P76PAD*)pad;
 
-		if (fcn == 53)
+		if (fcn == 57)
 		{
 			form->entries = 1;
 			sprintf(form->purpose[0], "DOI-2");
@@ -2065,22 +2025,22 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			if (h_peri < 10.0*1852.0)
 			{
-				//int r = rand() % 10;
+				int r = rand() % 10;
 
-				//if (r < 5)
-				//{
+				if (r < 5)
+				{
 					sprintf(form->LmkID[0], "17-2");
 					opt.alt[0] = -1.97*1852.0;
 					opt.lat[0] = 20.02*RAD;
 					opt.lng[0] = 30.804*RAD;
-				//}
-				//else
-				//{
-					//sprintf(form->LmkID[0], "17-3");
-					//opt.alt[0] = -1.89*1852.0;
-					//opt.lat[0] = 20.272*RAD;
-					//opt.lng[0] = 30.7*RAD;
-				//}
+				}
+				else
+				{
+					sprintf(form->LmkID[0], "17-3");
+					opt.alt[0] = -1.89*1852.0;
+					opt.lat[0] = 20.272*RAD;
+					opt.lng[0] = 30.7*RAD;
+				}
 			}
 			else
 			{
@@ -2091,9 +2051,9 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			}
 
 			//Updated landing site vector after processing landmark tracking data
-			//BZLAND.rad[RTCC_LMPOS_BEST] = 937.08*1852.0;
-			//BZLAND.lat[RTCC_LMPOS_BEST] = 20.164*RAD;
-			//BZLAND.lng[RTCC_LMPOS_BEST] = 30.750*RAD;
+			BZLAND.rad[RTCC_LMPOS_BEST] = 937.08*1852.0;
+			BZLAND.lat[RTCC_LMPOS_BEST] = 20.189*RAD;
+			BZLAND.lng[RTCC_LMPOS_BEST] = 30.757*RAD;
 		}
 		else if (fcn == 64) //LANDMARK TRACKING PAD (17-1)
 		{
@@ -2429,7 +2389,16 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 77: //DOI EVALUATION
 	{
-		sprintf(upMessage, "Go for PDI");
+		int r = rand() % 20;
+
+		if (r < 5 && calcParams.tgt->GetDamageModel() > 0)
+		{
+			sprintf(upMessage, "NO-GO for PDI");
+		}
+		else
+		{
+			sprintf(upMessage, "GO for PDI");
+		}
 	}
 	break;
 	case 78: //PDI EVALUATION
@@ -2459,17 +2428,44 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 80: //STAY FOR T1
 	{
-		sprintf(upMessage, "Stay for T1");
+		int r = rand() % 20;
+
+		if (r < 3 && calcParams.tgt->GetDamageModel() > 0)
+		{
+			sprintf(upMessage, "NO-STAY for T1");
+		}
+		else
+		{
+			sprintf(upMessage, "STAY for T1");
+		}
 	}
 	break;
 	case 81: //STAY FOR T2
 	{
-		sprintf(upMessage, "Stay for T2");
+		int r = rand() % 20;
+
+		if (r < 2 && calcParams.tgt->GetDamageModel() > 0)
+		{
+			sprintf(upMessage, "NO-STAY for T2");
+		}
+		else
+		{
+			sprintf(upMessage, "STAY for T2");
+		}
 	}
 	break;
 	case 82: //STAY FOR T3
 	{
-		sprintf(upMessage, "Stay for T3. IMU parking angles: +295.86, +000.00, +084.14");
+		int r = rand() % 20;
+
+		if (r < 1 && calcParams.tgt->GetDamageModel() > 0)
+		{
+			sprintf(upMessage, "NO-STAY for T3");
+		}
+		else
+		{
+			sprintf(upMessage, "STAY for T3. IMU parking angles: +295.86, +000.00, +084.14");
+		}
 
 		//Update landing site
 		calcParams.tgt->GetEquPos(BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
@@ -3148,6 +3144,20 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->DV[0] = DeltaV_LVLH / 0.3048;
 	}
 	break;
+	case 115:
+	{
+		int r = rand() % 20;
+
+		if (r < 5 && !GETEval2(4.0 * 3600.0) && calcParams.src->GetDamageModel() > 0)
+		{
+			sprintf(upMessage, "Apollo 17, you are NO-GO for TLI");
+		}
+		else
+		{
+			sprintf(upMessage, "Apollo 17, you are GO for TLI");
+		}
+	}
+	break;
 	case 120: //P99 LM deorbit uplink
 	{
 		char buffer1[1000], buffer2[1000], buffer3[1000], buffer4[1000];
@@ -3482,7 +3492,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		BZUSEVEC.data[7].VectorCode.assign("LLHU001");
 
 		med_s80.VEH = RTCC_MPT_LM;
-		med_s80.time = 0;
+		med_s80.time = 0.0;
 		med_s80.REF = BODY_MOON;
 		med_s80.VID[0] = "APIC001";
 		med_s80.VID[1] = "LLHU001";
@@ -3498,6 +3508,13 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		char buffer[1000];
 
 		sv0 = StateVectorCalc(calcParams.tgt);
+
+		//Simulate random inaccuracies in state vector
+		int r = rand() % 200 + 1;
+		double error = -1.0 + ((double)r / 100.0);
+		double GET = OrbMech::GETfromMJD(sv0.MJD, CalcGETBase());
+		GET += error;
+		sv0.MJD = OrbMech::MJDfromGET(GET, CalcGETBase());;
 
 		double SV_GET = OrbMech::GETfromMJD(sv0.MJD, CalcGETBase());
 		sv1 = coast(sv0, (calcParams.PDI - 10.0*60.0) - SV_GET);
@@ -3818,6 +3835,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			padtype = 2;
 			lng1 = -172.0*RAD;
 			lng2 = 100.0*RAD;
+			coast_t = 35.0 * 60.0;
 		}
 		else if (fcn == 153) //Pan camera photo PAD (116:20)
 		{
