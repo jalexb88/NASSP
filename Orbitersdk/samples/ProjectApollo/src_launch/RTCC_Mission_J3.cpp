@@ -1498,7 +1498,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		SV sv;
 		AP11LMMNV * form = (AP11LMMNV *)pad;
 		double P30TIG;
-		VECTOR3 dV_LVLH;
+		VECTOR3 dv_imp, dV_LVLH;
+		int engine;
 
 		sv = StateVectorCalc(calcParams.tgt);
 
@@ -1515,7 +1516,20 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		calcParams.PDI = PZLDPDIS.PD_GETIG;
 		CZTDTGTU.GETTD = PZLDPDIS.PD_GETTD;
 
-		PoweredFlightProcessor(sv, calcParams.DOI, RTCC_ENGINETYPE_LMRCSMINUS4, 0.0, PZLDPELM.V_man_after[0] - PZLDPELM.sv_man_bef[0].V, false, P30TIG, dV_LVLH);
+		dv_imp = PZLDPELM.V_man_after[0] - PZLDPELM.sv_man_bef[0].V;
+
+		//DPS? (say we really effed DOI-1)
+		double t = length(dv_imp) / (SystemParameters.MCTLT4 / calcParams.tgt->GetMass());
+		if (t > 30.0) //Mission rules 3-42
+		{
+			engine = RTCC_ENGINETYPE_LMDPS;
+		}
+		else
+		{
+			engine = RTCC_ENGINETYPE_LMRCSMINUS4;
+		}
+
+		PoweredFlightProcessor(sv, calcParams.DOI, engine, 0.0, dv_imp, false, P30TIG, dV_LVLH);
 
 		calcParams.TIGSTORE1 = P30TIG;
 		calcParams.DVSTORE1 = dV_LVLH;
@@ -1523,7 +1537,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.R_LLS = BZLAND.rad[RTCC_LMPOS_BEST];
 		opt.csmlmdocked = false;
 		opt.dV_LVLH = dV_LVLH;
-		opt.enginetype = RTCC_ENGINETYPE_LMRCSMINUS4;
+		opt.enginetype = engine;
 		opt.HeadsUp = false;
 		opt.REFSMMAT = EZJGMTX3.data[RTCC_REFSMMAT_TYPE_LLD - 1].REFSMMAT;
 		opt.TIG = P30TIG;
