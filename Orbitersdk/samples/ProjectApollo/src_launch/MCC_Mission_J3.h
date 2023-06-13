@@ -35,6 +35,7 @@ See http://nassp.sourceforge.net/license/ for more details.
 #define MST_J3_EPO3			13
 #define MST_J3_EPO4			14
 #define MST_J3_EPO5			15
+#define MST_J3_EPO6			16
 #define MST_J3_TRANSLUNAR1	20
 #define MST_J3_TRANSLUNAR2	21
 #define MST_J3_TRANSLUNAR3	22
