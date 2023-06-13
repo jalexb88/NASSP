@@ -1548,6 +1548,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "DOI-2");
 		sprintf(form->remarks, "\n%+06d TIG AGS 373", (int)(AGSTIG / 60.0 * 10.0));
+
+		if (engine == RTCC_ENGINETYPE_LMDPS)
+		{
+			sprintf(form->remarks, "%s\nUse DPS", form->remarks);
+		}
 	}
 	break;
 	case 39: //CSM CIRC calculation
