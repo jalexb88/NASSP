@@ -1906,7 +1906,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			DeltaV_LVLH = PZREAP.RTEDTable[0].DV_XDV;
 
 			AGCStateVectorUpdate(buffer1, sv1, true, true);
-			CMCExternalDeltaVUpdate(buffer2, TimeofIgnition, DeltaV_LVLH);
+			CMCRetrofireExternalDeltaVUpdate(buffer2, SplashLatitude, SplashLongitude, TimeofIgnition, DeltaV_LVLH);
 
 			sprintf(uplinkdata, "%s%s", buffer1, buffer2);
 			if (upString != NULL) {
@@ -2901,11 +2901,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (fcn == 102)
 		{
-			sprintf(uplinkdata, "%s%s", buffer1, buffer2);
+			sprintf(uplinkdata, "%s%sV45ER", buffer1, buffer2);
 			if (upString != NULL) {
 				// give to mcc
 				strncpy(upString, uplinkdata, 1024 * 3);
-				sprintf(upDesc, "CSM and LM state vectors");
+				sprintf(upDesc, "CSM and LM state vectors, Reset surface flag");
 			}
 		}
 		else
@@ -3626,7 +3626,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
-			sprintf(upMessage, "Liftoff time update required\nAdjust PAD times by: %d:%d:%.2lf", hh, mm, ss);
+			sprintf(upMessage, "Liftoff time update required\nAdjust Flyby GET by: %d:%d:%.2lf", hh, mm, ss);
 		}
 	}
 	break;
@@ -3680,7 +3680,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
-			sprintf(upMessage, "Liftoff time update required\nAdjust PAD times by: %d:%d:%.2lf", hh, mm, ss);
+			if (fcn == 142)
+			{
+				sprintf(upMessage, "Liftoff time update required\nAdjust TEI-5 GET by: %d:%d:%.2lf", hh, mm, ss);
+			}
+			else
+			{
+				sprintf(upMessage, "Liftoff time update required\nAdjust TEI-65 GET by: %d:%d:%.2lf", hh, mm, ss);
+			}
 		}
 	}
 	break;
@@ -3927,7 +3934,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			padtype = 2;
 			lng1 = -45.0*RAD;
 			lng2 = -60.0*RAD;
-			coast_t = 40.0*60.0;
+			coast_t = 30.0*60.0;
 		}
 		else if (fcn == 163) //Pan camera photo PAD(183:45)
 		{
