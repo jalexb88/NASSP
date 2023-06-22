@@ -707,7 +707,7 @@ void MCC::MissionSequence_J3()
 		UpdateMacro(UTP_LGCUPLINKDIRECT, PT_NONE, SubStateTime > 30.0, 122, MST_J3_LUNAR_ORBIT_POST_DOCKING_10);
 		break;
 	case MST_J3_LUNAR_ORBIT_POST_DOCKING_10: //Ground command V33 to Ground command ENT
-		UpdateMacro(UTP_LGCUPLINKDIRECT, PT_NONE, rtcc->GETEval2(rtcc->TimeofIgnition - 2.0*60.0), 123, MST_J3_LUNAR_ORBIT_POST_DOCKING_11);
+		UpdateMacro(UTP_LGCUPLINKDIRECT, PT_NONE, rtcc->GETEval2(rtcc->TimeofIgnition - 75.0), 123, MST_J3_LUNAR_ORBIT_POST_DOCKING_11);
 		break;
 	case MST_J3_LUNAR_ORBIT_POST_DOCKING_11: //Ground command ENT to Ground command V33
 		UpdateMacro(UTP_LGCUPLINKDIRECT, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TIGSTORE1 + 30.0), 124, MST_J3_LUNAR_ORBIT_POST_DOCKING_12);

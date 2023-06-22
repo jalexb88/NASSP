@@ -1498,7 +1498,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		SV sv;
 		AP11LMMNV * form = (AP11LMMNV *)pad;
 		double P30TIG;
-		VECTOR3 dV_LVLH;
+		VECTOR3 dv_imp, dV_LVLH;
+		int engine;
 
 		sv = StateVectorCalc(calcParams.tgt);
 
@@ -1515,7 +1516,20 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		calcParams.PDI = PZLDPDIS.PD_GETIG;
 		CZTDTGTU.GETTD = PZLDPDIS.PD_GETTD;
 
-		PoweredFlightProcessor(sv, calcParams.DOI, RTCC_ENGINETYPE_LMRCSMINUS4, 0.0, PZLDPELM.V_man_after[0] - PZLDPELM.sv_man_bef[0].V, false, P30TIG, dV_LVLH);
+		dv_imp = PZLDPELM.V_man_after[0] - PZLDPELM.sv_man_bef[0].V;
+
+		//DPS? (say we really effed DOI-1)
+		double t = length(dv_imp) / (SystemParameters.MCTLT4 / calcParams.tgt->GetMass());
+		if (t > 30.0) //Mission rules 3-42
+		{
+			engine = RTCC_ENGINETYPE_LMDPS;
+		}
+		else
+		{
+			engine = RTCC_ENGINETYPE_LMRCSMINUS4;
+		}
+
+		PoweredFlightProcessor(sv, calcParams.DOI, engine, 0.0, dv_imp, false, P30TIG, dV_LVLH);
 
 		calcParams.TIGSTORE1 = P30TIG;
 		calcParams.DVSTORE1 = dV_LVLH;
@@ -1523,7 +1537,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.R_LLS = BZLAND.rad[RTCC_LMPOS_BEST];
 		opt.csmlmdocked = false;
 		opt.dV_LVLH = dV_LVLH;
-		opt.enginetype = RTCC_ENGINETYPE_LMRCSMINUS4;
+		opt.enginetype = engine;
 		opt.HeadsUp = false;
 		opt.REFSMMAT = EZJGMTX3.data[RTCC_REFSMMAT_TYPE_LLD - 1].REFSMMAT;
 		opt.TIG = P30TIG;
@@ -1534,6 +1548,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		AP11LMManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "DOI-2");
 		sprintf(form->remarks, "\n%+06d TIG AGS 373", (int)(AGSTIG / 60.0 * 10.0));
+
+		if (engine == RTCC_ENGINETYPE_LMDPS)
+		{
+			sprintf(form->remarks, "%s\nUse DPS", form->remarks);
+		}
 	}
 	break;
 	case 39: //CSM CIRC calculation
@@ -1887,7 +1906,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			DeltaV_LVLH = PZREAP.RTEDTable[0].DV_XDV;
 
 			AGCStateVectorUpdate(buffer1, sv1, true, true);
-			CMCExternalDeltaVUpdate(buffer2, TimeofIgnition, DeltaV_LVLH);
+			CMCRetrofireExternalDeltaVUpdate(buffer2, SplashLatitude, SplashLongitude, TimeofIgnition, DeltaV_LVLH);
 
 			sprintf(uplinkdata, "%s%s", buffer1, buffer2);
 			if (upString != NULL) {
@@ -2887,11 +2906,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (fcn == 102)
 		{
-			sprintf(uplinkdata, "%s%s", buffer1, buffer2);
+			sprintf(uplinkdata, "%s%sV45ER", buffer1, buffer2);
 			if (upString != NULL) {
 				// give to mcc
 				strncpy(upString, uplinkdata, 1024 * 3);
-				sprintf(upDesc, "CSM and LM state vectors");
+				sprintf(upDesc, "CSM and LM state vectors, Reset surface flag");
 			}
 		}
 		else
@@ -3612,7 +3631,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
-			sprintf(upMessage, "Liftoff time update required\nAdjust PAD times by: %d:%d:%.2lf", hh, mm, ss);
+			sprintf(upMessage, "Liftoff time update required\nAdjust Flyby GET by: %d:%d:%.2lf", hh, mm, ss);
 		}
 	}
 	break;
@@ -3666,7 +3685,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
-			sprintf(upMessage, "Liftoff time update required\nAdjust PAD times by: %d:%d:%.2lf", hh, mm, ss);
+			if (fcn == 142)
+			{
+				sprintf(upMessage, "Liftoff time update required\nAdjust TEI-5 GET by: %d:%d:%.2lf", hh, mm, ss);
+			}
+			else
+			{
+				sprintf(upMessage, "Liftoff time update required\nAdjust TEI-65 GET by: %d:%d:%.2lf", hh, mm, ss);
+			}
 		}
 	}
 	break;
@@ -3913,7 +3939,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 			padtype = 2;
 			lng1 = -45.0*RAD;
 			lng2 = -60.0*RAD;
-			coast_t = 40.0*60.0;
+			coast_t = 30.0*60.0;
 		}
 		else if (fcn == 163) //Pan camera photo PAD(183:45)
 		{
