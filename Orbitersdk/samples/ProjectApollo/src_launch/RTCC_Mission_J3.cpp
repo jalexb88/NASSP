@@ -2389,9 +2389,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 77: //DOI EVALUATION
 	{
+		SV sv;
+		sv = StateVectorCalc(calcParams.tgt);
+
+		double TimeFromDOI = OrbMech::GETfromMJD(sv.MJD, CalcGETBase()) - calcParams.DOI;
+
 		int r = rand() % 20;
 
-		if (r < 5 && calcParams.tgt->GetDamageModel() > 0)
+		if (r < 5 && TimeFromDOI < 3600.0 && calcParams.tgt->GetDamageModel() > 0)
 		{
 			sprintf(upMessage, "NO-GO for PDI");
 		}
@@ -2720,7 +2725,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 		else
 		{
-			calcParams.LunarLiftoff = ASC_GET + (CurRev + 1 - NomAscentRev)*2.0*3600.0;
+			calcParams.LunarLiftoff = ASC_GET + (CurRev + 1 - NomAscentRev)*t_P;
 		}
 	}
 	break;
