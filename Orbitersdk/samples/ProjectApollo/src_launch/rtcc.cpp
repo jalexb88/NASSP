@@ -5114,9 +5114,9 @@ MATRIX3 RTCC::REFSMMATCalc(REFSMMATOpt *opt)
 		double phi, DLNG;
 
 		phi = SystemParameters.MCLLTP[0];
-		DLNG = SystemParameters.MCLGRA + SystemParameters.MCLAMD + SystemParameters.MCERTS * SystemParameters.MCGMTL / 3600.0;
+		DLNG = SystemParameters.MCLGRA + SystemParameters.MCLAMD + SystemParameters.MCERTS * SystemParameters.MCGMTL;
 
-		return GLMRTM(_M(1, 0, 0, 0, 1, 0, 0, 0, 1), DLNG, 3, -PI05 - phi, 2, SystemParameters.MCLABN, 1);
+		return GLMRTM(_M(1, 0, 0, 0, 1, 0, 0, 0, 1), DLNG, 3, -PI05 - phi, 2, SystemParameters.MCLABN, 3);
 	}
 	else if (opt->REFSMMATopt == 6)
 	{
@@ -23278,6 +23278,20 @@ int RTCC::EMMENV(EphemerisDataTable2 &ephemeris, ManeuverTimesTable &MANTIMES, d
 
 void RTCC::EMDSSEMD(int ind, double param)
 {
+	EZSSTAB.errormessage = "";
+
+	if (PZMPTCSM.CommonBlock.TUP < 0)
+	{
+		EZSSTAB.errormessage = "TABLE BEING UPDATED";
+		return;
+	}
+
+	if (PZMPTCSM.CommonBlock.TUP != EZCCSM.TUP)
+	{
+		EZSSTAB.errormessage = "INCONSISTENT TABLES";
+		return;
+	}
+
 	double GMT_begin, get, Pitch, Yaw;
 
 	if (ind == 1)
@@ -23342,6 +23356,10 @@ void RTCC::EMDSSEMD(int ind, double param)
 	}
 
 	if (EZSSTAB.num == 0) return;
+	if (EZSSTAB.num < 8)
+	{
+		EZSSTAB.errormessage = "END OF AVAILABLE DATA";
+	}
 
 	for (int i = 0;i < EZSSTAB.num;i++)
 	{
@@ -23366,6 +23384,20 @@ void RTCC::EMDSSEMD(int ind, double param)
 
 void RTCC::EMDSSMMD(int ind, double param)
 {
+	EZMMTAB.errormessage = "";
+
+	if (PZMPTCSM.CommonBlock.TUP < 0)
+	{
+		EZMMTAB.errormessage = "TABLE BEING UPDATED";
+		return;
+	}
+
+	if (PZMPTCSM.CommonBlock.TUP != EZCCSM.TUP)
+	{
+		EZMMTAB.errormessage = "INCONSISTENT TABLES";
+		return;
+	}
+
 	double GMT_begin, get, Pitch, Yaw;
 
 	if (ind == 1)
@@ -23416,6 +23448,10 @@ void RTCC::EMDSSMMD(int ind, double param)
 	}
 
 	if (EZMMTAB.num == 0) return;
+	if (EZMMTAB.num < 8)
+	{
+		EZMMTAB.errormessage = "END OF AVAILABLE DATA";
+	}
 
 	for (int i = 0;i < EZMMTAB.num;i++)
 	{
@@ -34095,7 +34131,7 @@ void RTCC::LMMGRP(int veh, double gmt)
 	//CSM
 	if (veh == 0)
 	{
-		REFS = GLMRTM(_M(1, 0, 0, 0, 1, 0, 0, 0, 1), DLNG, 3, -PI05 - lat, 2, SystemParameters.MCLABN, 1);
+		REFS = GLMRTM(_M(1, 0, 0, 0, 1, 0, 0, 0, 1), DLNG, 3, -PI05 - lat, 2, SystemParameters.MCLABN, 3);
 
 		EZJGMTX1.data[0].ID = 0;
 		EMGSTSTM(1, REFS, RTCC_REFSMMAT_TYPE_CUR, gmt);
