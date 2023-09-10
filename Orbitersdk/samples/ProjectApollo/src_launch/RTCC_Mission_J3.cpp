@@ -676,9 +676,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		RTEMoonTargeting(&entopt, &res);
 
-		SV sv_peri = FindPericynthion(res.sv_postburn);
-		double h_peri = length(sv_peri.R) - OrbMech::R_Moon;
-
 		opt.R_LLS = BZLAND.rad[RTCC_LMPOS_BEST];
 		opt.dV_LVLH = res.dV_LVLH;
 		opt.enginetype = SPSRCSDecision(SPS_THRUST / (calcParams.src->GetMass() + calcParams.tgt->GetMass()), res.dV_LVLH);
@@ -691,7 +688,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		AP11ManeuverPAD(&opt, *form);
 
 		sprintf(form->purpose, "Flyby");
-		sprintf(form->remarks, "Height of pericynthion is %.0f NM", h_peri / 1852.0);
+		sprintf(form->remarks, "Height of pericynthion is %.0f NM", res.FlybyAlt / 1852.0);
 		form->lat = res.latitude*DEG;
 		form->lng = res.longitude*DEG;
 		form->RTGO = res.RTGO;
@@ -1156,7 +1153,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		SV_GET = OrbMech::GETfromMJD(sv1.MJD, CalcGETBase());
 		t_P = OrbMech::period(sv1.R, sv1.V, OrbMech::mu_Moon);
 		sv2 = coast(sv1, (t_P*PZLOIPLN.REVS1 - (SV_GET - calcParams.LOI)));
-		sv_peri = FindPericynthion(sv2);
+		double dt = OrbMech::timetoperi(sv2.R, sv2.V, OrbMech::mu_Moon);
+		sv_peri = coast(sv2, dt);
 		Peri_GET = OrbMech::GETfromMJD(sv_peri.MJD, CalcGETBase());
 
 		//Calculate longitude bias to account for time spent from DOI-1 to PDI
@@ -1471,7 +1469,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		sv = StateVectorCalc(calcParams.src); //State vector for uplink
 
-		t_lng = OrbMech::P29TimeOfLongitude(sv.R, sv.V, sv.MJD, GetGravref(BODY_MOON), 136.0*RAD);
+		t_lng = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv.R, sv.V, sv.MJD, GetGravref(BODY_MOON), 136.0*RAD);
 		ttoLNG = (t_lng - sv.MJD)*24.0 * 3600.0;
 		t_Sep = (sv.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 
@@ -1952,7 +1950,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		sv = StateVectorCalc(calcParams.tgt);
 
-		t_lng = OrbMech::P29TimeOfLongitude(sv.R, sv.V, sv.MJD, GetGravref(BODY_MOON), BZLAND.lng[RTCC_LMPOS_BEST]);
+		t_lng = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv.R, sv.V, sv.MJD, GetGravref(BODY_MOON), BZLAND.lng[RTCC_LMPOS_BEST]);
 		ttoLNG = (t_lng - sv.MJD)*24.0 * 3600.0;
 		GET = (sv.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 		OrbMech::SStoHHMMSS(GET, hh, mm, ss);
@@ -1999,7 +1997,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		MJDguess = CalcGETBase() + LmkTime / 24.0 / 3600.0;
 		sv1 = coast(sv0, (MJDguess - sv0.MJD)*24.0*3600.0);
 		R_P = unit(_V(cos(lng)*cos(lat), sin(lng)*cos(lat), sin(lat)))*(oapiGetSize(sv1.gravref) + alt);
-		dt2 = OrbMech::findelev_gs(sv1.R, sv1.V, R_P, MJDguess, 152.0*RAD, sv1.gravref, LmkRange);
+		dt2 = OrbMech::findelev_gs(SystemParameters.MAT_J2000_BRCS, sv1.R, sv1.V, R_P, MJDguess, 152.0*RAD, sv1.gravref, LmkRange);
 
 		form->P22_ACQ_GET = dt2 + (MJDguess - CalcGETBase()) * 24.0 * 60.0 * 60.0;
 	}
@@ -2036,13 +2034,13 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 		else if (fcn == 63) //LANDMARK TRACKING PAD (17-X)
 		{
-			SV sv_peri = FindPericynthion(sv0);
-			double h_peri = length(sv_peri.R) - OrbMech::R_Moon;
+			double apo, peri;
+			OrbMech::periapo(sv0.R, sv0.V, OrbMech::mu_Moon, apo, peri);
 
 			opt.LmkTime[0] = calcParams.SEP + 30.0*60.0;
 			opt.entries = 1;
 
-			if (h_peri < 10.0*1852.0)
+			if ((peri - OrbMech::R_Moon) < 10.0*1852.0)
 			{
 				int r = rand() % 10;
 
@@ -2139,7 +2137,6 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.R_LS = OrbMech::r_from_latlong(BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
 		opt.sv0 = sv;
 		opt.t_land = CZTDTGTU.GETTD;
-		opt.vessel = calcParams.tgt;
 
 		PDI_PAD(&opt, *form);
 
@@ -2364,7 +2361,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		t_TPI = PZLRPT.data[1].T_TPI;
 
 		sv_CSM2 = coast(sv_CSM, calcParams.PDI - OrbMech::GETfromMJD(sv_CSM.MJD, CalcGETBase()));
-		MJD_over = OrbMech::P29TimeOfLongitude(sv_CSM2.R, sv_CSM2.V, sv_CSM2.MJD, sv_CSM2.gravref, BZLAND.lng[RTCC_LMPOS_BEST]);
+		MJD_over = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv_CSM2.R, sv_CSM2.V, sv_CSM2.MJD, sv_CSM2.gravref, BZLAND.lng[RTCC_LMPOS_BEST]);
 		sv_CSM_over = coast(sv_CSM2, (MJD_over - sv_CSM2.MJD)*24.0*3600.0);
 
 		form->T3_TIG = round(t_L);
@@ -2931,74 +2928,43 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	{
 		AP12LMASCPAD * form = (AP12LMASCPAD*)pad;
 
-		SV sv_CSM;
-		MATRIX3 Rot, Rot2, Rot_VL;
-		VECTOR3 R_LS;
-		double m0, m1, TIG, v_LH, v_LV;
+		ASCPADOpt opt;
+		double m0, m1;
 
 		//Definitions
-		TIG = TimeofIgnition;
-		v_LH = DeltaV_LVLH.x;
-		v_LV = DeltaV_LVLH.y;
+		opt.TIG = TimeofIgnition;
+		opt.v_LH = DeltaV_LVLH.x;
+		opt.v_LV = DeltaV_LVLH.y;
 
-		sv_CSM = StateVectorCalc(calcParams.src);
-		R_LS = OrbMech::r_from_latlong(BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
+		opt.sv_CSM = StateVectorCalcEphem(calcParams.src);
+		opt.R_LS = OrbMech::r_from_latlong(BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
 
 		LEM *l = (LEM*)calcParams.tgt;
 		m0 = l->GetAscentStageMass();
 		m1 = calcParams.src->GetMass();
 
-		calcParams.tgt->GetRotationMatrix(Rot);
-		oapiGetRotationMatrix(sv_CSM.gravref, &Rot2);
-
-		Rot_VL = OrbMech::GetVesselToLocalRotMatrix(Rot, Rot2);
+		opt.Rot_VL = OrbMech::GetVesselToLocalRotMatrix(calcParams.tgt);
 
 		// Calculate ascent PAD
-		SV sv_Ins, sv_CSM_TIG;
-		MATRIX3 Rot_LG, Rot_VG;
-		VECTOR3 R_LSP, Q, U_R, Z_B, X_AGS, Y_AGS, Z_AGS;
-		double CR, MJD_TIG, SMa, R_D, delta_L, sin_DL, cos_DL, AGSTPI, apo, peri;
+		double AGSTPI, apo, peri;
 
 		AGSTPI = calcParams.TIGSTORE1 - GETfromGMT(GetAGSClockZero());
 
+		SV sv_CSM = StateVectorCalc(calcParams.src);
 		OrbMech::periapo(sv_CSM.R, sv_CSM.V, OrbMech::mu_Moon, apo, peri);
 
-		MJD_TIG = OrbMech::MJDfromGET(TIG, CalcGETBase());
-		sv_CSM_TIG = coast(sv_CSM, TIG - OrbMech::GETfromMJD(sv_CSM.MJD, CalcGETBase()));
+		AP11LMASCPAD pad2;
 
-		ELVCNV(R_LS, GMTfromGET(TIG), 1, 3, 2, R_LSP);
+		LunarAscentPAD(opt, pad2);
 
-		Q = unit(crossp(sv_CSM_TIG.V, sv_CSM_TIG.R));
-		U_R = unit(R_LSP);
-		R_D = length(R_LSP) + 60000.0*0.3048;
-		CR = -R_D * asin(dotp(U_R, Q));
-
-		sv_Ins.R = _V(R_D, 0, 0);
-		sv_Ins.V = _V(v_LV, v_LH, 0);
-		sv_Ins.gravref = sv_CSM_TIG.gravref;
-		SMa = GetSemiMajorAxis(sv_Ins);
-
-		Rot_LG = OrbMech::GetRotationMatrix(BODY_MOON, MJD_TIG);
-		Rot_VG = OrbMech::GetVesselToGlobalRotMatrix(Rot_VL, Rot_LG);
-		Z_B = mul(Rot_VG, _V(0, 0, 1));
-		Z_B = unit(_V(Z_B.x, Z_B.z, Z_B.y));
-		X_AGS = U_R;
-		Z_AGS = unit(crossp(-Q, X_AGS));
-		Y_AGS = unit(crossp(Z_AGS, X_AGS));
-
-		delta_L = atan2(dotp(Z_B, Z_AGS), dotp(Z_B, Y_AGS));
-		sin_DL = sin(delta_L);
-		cos_DL = cos(delta_L);
-
-		form->CR = CR / 1852.0;
-		form->TIG = TIG;
-		form->V_hor = v_LH / 0.3048;
-		form->V_vert = v_LV / 0.3048;
-		form->DEDA047 = OrbMech::DoubleToDEDA(sin_DL, 14);
-		form->DEDA053 = OrbMech::DoubleToDEDA(cos_DL, 14);
-		form->DEDA225_226 = SMa / 0.3048 / 100.0;
-		form->DEDA231 = length(R_LS) / 0.3048 / 100.0;
-		form->DEDA465 = v_LV / 0.3048;
+		form->CR = pad2.CR;
+		form->TIG = pad2.TIG;
+		form->V_hor = pad2.V_hor;
+		form->V_vert = form->DEDA465 = pad2.V_vert;
+		form->DEDA047 = pad2.DEDA047;
+		form->DEDA053 = pad2.DEDA053;
+		form->DEDA225_226 = pad2.DEDA225_226;
+		form->DEDA231 = pad2.DEDA231;
 		form->TIG_2 = calcParams.TIGSTORE1;
 		form->LMWeight = m0 / 0.45359237;
 		form->CSMWeight = m1 / 0.45359237;
@@ -3119,14 +3085,14 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		sv1 = coast(sv0, 1.5*3600.0);
 
 		//Find time of SEP
-		t_lng = OrbMech::P29TimeOfLongitude(sv1.R, sv1.V, sv1.MJD, GetGravref(BODY_MOON), 35.3*RAD);
+		t_lng = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv1.R, sv1.V, sv1.MJD, GetGravref(BODY_MOON), 35.3*RAD);
 		ttoLNG = (t_lng - sv1.MJD)*24.0 * 3600.0;
 		calcParams.SEP = (sv1.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 
 		sv1 = coast(sv0, 3.0*3600.0);
 
 		//Find impact burn TIG
-		t_lng = OrbMech::P29TimeOfLongitude(sv1.R, sv1.V, sv1.MJD, GetGravref(BODY_MOON), 87.1*RAD);
+		t_lng = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv1.R, sv1.V, sv1.MJD, GetGravref(BODY_MOON), 87.1*RAD);
 		ttoLNG = (t_lng - sv1.MJD)*24.0 * 3600.0;
 		TimeofIgnition = (sv1.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 
@@ -3602,7 +3568,13 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 140: //TLC lunar pericynthion evaluation
 	{
-		SV sv_peri = FindPericynthion(StateVectorCalc(calcParams.src));
+		SV sv = StateVectorCalc(calcParams.src);
+		OBJHANDLE hMoon = oapiGetObjectByName("Moon");
+
+		double dt = OrbMech::timetoperi_integ(sv.R, sv.V, sv.MJD, sv.gravref, hMoon);
+
+		SV sv_peri = coast(sv, dt);
+
 		double h_peri = length(sv_peri.R) - OrbMech::R_Moon;
 
 		if ((h_peri / 1852.0) > 20.0 )
@@ -3659,7 +3631,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		double t_P = OrbMech::period(sv1.R, sv1.V, OrbMech::mu_Moon);
 		sv2 = coast(sv1, t_P*revs);
 
-		t_lng = OrbMech::P29TimeOfLongitude(sv2.R, sv2.V, sv2.MJD, GetGravref(BODY_MOON), 180.0*RAD);
+		t_lng = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv2.R, sv2.V, sv2.MJD, GetGravref(BODY_MOON), 180.0*RAD);
 		ttoLNG = (t_lng - sv2.MJD)*24.0 * 3600.0;
 		GETm = (sv2.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 
@@ -4050,11 +4022,11 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		{
 			double t_lng, ttoLNG;
 
-			t_lng = OrbMech::P29TimeOfLongitude(sv2.R, sv2.V, MJD, gravref, lng1);
+			t_lng = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv2.R, sv2.V, MJD, gravref, lng1);
 			ttoLNG = (t_lng - MJD)*24.0 * 3600.0;
 			GET1 = (MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 
-			t_lng = OrbMech::P29TimeOfLongitude(sv2.R, sv2.V, MJD, gravref, lng2);
+			t_lng = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv2.R, sv2.V, MJD, gravref, lng2);
 			ttoLNG = (t_lng - MJD)*24.0 * 3600.0;
 			GET2 = (MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
 
@@ -4080,8 +4052,8 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			OBJHANDLE hSun = oapiGetObjectByName("Sun");
 
-			ttoSR = OrbMech::sunrise(sv2.R, sv2.V, MJD, gravref, hSun, 1, 0, true);
-			ttoSS = OrbMech::sunrise(sv2.R, sv2.V, MJD, gravref, hSun, 0, 0, true);
+			ttoSR = OrbMech::sunrise(SystemParameters.MAT_J2000_BRCS, sv2.R, sv2.V, MJD, gravref, hSun, 1, 0, true);
+			ttoSS = OrbMech::sunrise(SystemParameters.MAT_J2000_BRCS, sv2.R, sv2.V, MJD, gravref, hSun, 0, 0, true);
 
 			GET1 = (MJD - CalcGETBase())*24.0*3600.0 + ttoSR;
 			GET2 = (MJD - CalcGETBase())*24.0*3600.0 + ttoSS;
