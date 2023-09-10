@@ -583,6 +583,9 @@ Saturn::~Saturn()
 {
 	TRACESETUP("~Saturn");
 
+	ReleaseSurfaces();
+	ReleaseSurfacesVC();
+
 	if (sivb)
 	{
 		delete sivb;
@@ -648,7 +651,6 @@ void Saturn::initSaturn()
 	CSMAttached = true;
 	SIMBayPanelJett = false;
 
-	TLICapableBooster = false;
 	TLISoundsLoaded = false;
 	IUSCContPermanentEnabled = true;
 

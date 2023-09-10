@@ -97,9 +97,11 @@ namespace mission {
 		bHasAEA = true;
 		bLMHasAscEngArmAssy = false;
 		bLMHasLegs = true;
+		bLMHasDeflectors = true;
 		bCSMHasHGA = true;
 		bCSMHasVHFRanging = true;
 		strCMCVersion = "Artemis072";
+		dTEPHEM0 = 41133.;
 		strLGCVersion = "Luminary210";
 		strAEAVersion = "FP8";
 		bInvertLMStageBit = false;
@@ -109,6 +111,8 @@ namespace mission {
 		iCMtoLMPowerConnectionVersion = 0;
 		EmptySMCG = _V(914.5916, -6.6712, 12.2940); //Includes: empty SM and SLA ring, but no SM RCS
 		bHasRateAidedOptics = false;
+		iLMCWEAVersion = 0;
+		bCrossPointerReversePolarity = false;
 		strCDRName = "CDR";
 		strCMPName = "CMP";
 		strLMPName = "LMP";
@@ -208,6 +212,10 @@ namespace mission {
 				strncpy(buffer, line + 10, 255);
 				bLMHasLegs = !_strnicmp(buffer, "TRUE", 4);
 			}
+			else if (!_strnicmp(line, "LMHasDeflectors=", 16)) {
+				strncpy(buffer, line + 16, 255);
+				bLMHasDeflectors = !_strnicmp(buffer, "TRUE", 4);
+			}
 			else if (!_strnicmp(line, "CSMHasHGA=", 10)) {
 				strncpy(buffer, line + 10, 255);
 				bCSMHasHGA = !_strnicmp(buffer, "TRUE", 4);
@@ -219,6 +227,7 @@ namespace mission {
 			else if (!_strnicmp(line, "CMCVersion=", 11)) {
 				strncpy(buffer, line + 11, 255);
 				strCMCVersion.assign(buffer);
+				UpdateTEPHEM0();
 			}
 			else if (!_strnicmp(line, "LGCVersion=", 11)) {
 				strncpy(buffer, line + 11, 255);
@@ -253,6 +262,16 @@ namespace mission {
 			else if (!_strnicmp(line, "HasRateAidedOptics=", 19)) {
 				strncpy(buffer, line + 19, 255);
 				bHasRateAidedOptics = !_strnicmp(buffer, "TRUE", 4);
+			}
+			else if (!_strnicmp(line, "LMCWEAVersion=", 14)) {
+				sscanf(line + 14, "%d", &iLMCWEAVersion);
+			}
+			else if (!_strnicmp(line, "CrossPointerReversePolarity=", 28)) {
+				strncpy(buffer, line + 28, 255);
+				bCrossPointerReversePolarity = !_strnicmp(buffer, "TRUE", 4);
+			}
+			else if (!_strnicmp(line, "TEPHEM0=", 8)) {
+				sscanf(line + 8, "%lf", &dTEPHEM0);
 			}
 			else if (!_strnicmp(line, "CDRVesselName=", 14)) {
 				strncpy(buffer, line + 14, 255);
@@ -335,6 +354,11 @@ namespace mission {
 		return bLMHasLegs;
 	}
 
+	bool Mission::LMHasDeflectors() const
+	{
+		return bLMHasDeflectors;
+	}
+
 	bool Mission::CSMHasHGA() const
 	{
 		return bCSMHasHGA;
@@ -388,6 +412,21 @@ namespace mission {
 	bool Mission::HasRateAidedOptics() const
 	{
 		return bHasRateAidedOptics;
+	}
+
+	int Mission::GetLMCWEAVersion() const
+	{
+		return iLMCWEAVersion;
+	}
+
+	bool Mission::GetCrossPointerReversePolarity() const
+	{
+		return bCrossPointerReversePolarity;
+	}
+
+	double Mission::GetTEPHEM0() const
+	{
+		return dTEPHEM0;
 	}
 
 	void Mission::ReadCueCardLine(char *line, int vehicle)
@@ -453,6 +492,26 @@ namespace mission {
 	void Mission::AddLMCueCard(unsigned location, std::string meshname, VECTOR3 ofs)
 	{
 		AddCueCard(1, location, meshname, ofs);
+	}
+
+	void Mission::UpdateTEPHEM0()
+	{
+		if (strCMCVersion == "Colossus237" || strCMCVersion == "Colossus249" || strCMCVersion == "Manche45R2")
+		{
+			dTEPHEM0 = 40038.;
+		}
+		else if (strCMCVersion == "Comanche055")
+		{
+			dTEPHEM0 = 40403.;
+		}
+		else if (strCMCVersion == "Artemis072NBY71")
+		{
+			dTEPHEM0 = 40768.;
+		}
+		else if (strCMCVersion == "Artemis072")
+		{
+			dTEPHEM0 = 41133.;
+		}
 	}
 
 	const std::string& Mission::GetCDRName() const

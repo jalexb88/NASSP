@@ -155,7 +155,6 @@ void SaturnV::initSaturnV()
 	// State variables.
 	//
 
-	TLICapableBooster = true;
 	GoHover = false;
 	Burned = false;
 
@@ -197,8 +196,6 @@ SaturnV::~SaturnV()
 
 {
 	TRACESETUP("~SaturnV");
-
-	ReleaseSurfaces();
 
 	if (iu)
 	{

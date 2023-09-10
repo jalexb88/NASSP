@@ -293,6 +293,7 @@ public:
 	void MissionSequence_G();
 	void MissionSequence_H1();
 	void MissionSequence_J3();
+	void MissionSequence_SL();
 
 	RTCC *rtcc;												// Pointer to RTCC
 	Saturn *cm;												// Pointer to CM
