@@ -4481,7 +4481,7 @@ void MCC::SetCSM(char *csmname)
 
 	strncat(CSMName, csmname, 64);
 
-	hVessel = oapiGetObjectByName(csmname);
+	hVessel = oapiGetVesselByName(csmname);
 	if (hVessel != NULL)
 	{
 		v = oapiGetVesselInterface(hVessel);
@@ -4499,7 +4499,7 @@ void MCC::SetLM(char *lemname)
 
 	strncat(LEMName, lemname, 64);
 
-	hVessel = oapiGetObjectByName(lemname);
+	hVessel = oapiGetVesselByName(lemname);
 	if (hVessel != NULL)
 	{
 		v = oapiGetVesselInterface(hVessel);
@@ -4518,7 +4518,7 @@ void MCC::SetLV(char *lvname)
 
 	strncat(LVName, lvname, 64);
 
-	hVessel = oapiGetObjectByName(lvname);
+	hVessel = oapiGetVesselByName(lvname);
 	if (hVessel != NULL)
 	{
 		v = oapiGetVesselInterface(hVessel);
