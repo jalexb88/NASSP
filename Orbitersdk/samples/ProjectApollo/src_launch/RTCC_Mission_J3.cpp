@@ -211,6 +211,10 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		EMSGSUPP(1, 1);
 		//Make telemetry matrix current
 		GMGMED("G00,CSM,TLM,CSM,CUR;");
+
+		//F62: Interpolate SFP
+		sprintf_s(Buff, "F62,,1,%.3lf;", Azi);
+		GMGMED(Buff);
 	}
 	break;
 	case 11: //TLI SIMULATION
@@ -403,6 +407,12 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (lvdc->LVDC_Timebase == 5)
 		{
+			char Buff[128];
+
+			//F62: Interpolate SFP for 2nd opportunity
+			sprintf_s(Buff, "F62,,2,%.3lf;", lvdc->Azimuth*DEG);
+			GMGMED(Buff);
+
 			scrubbed = true;
 		}
 	}
@@ -1997,7 +2007,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		MJDguess = CalcGETBase() + LmkTime / 24.0 / 3600.0;
 		sv1 = coast(sv0, (MJDguess - sv0.MJD)*24.0*3600.0);
 		R_P = unit(_V(cos(lng)*cos(lat), sin(lng)*cos(lat), sin(lat)))*(oapiGetSize(sv1.gravref) + alt);
-		dt2 = OrbMech::findelev_gs(SystemParameters.MAT_J2000_BRCS, sv1.R, sv1.V, R_P, MJDguess, 152.0*RAD, sv1.gravref, LmkRange);
+		dt2 = OrbMech::findelev_gs(SystemParameters.AGCEpoch, SystemParameters.MAT_J2000_BRCS, sv1.R, sv1.V, R_P, MJDguess, 152.0*RAD, sv1.gravref, LmkRange);
 
 		form->P22_ACQ_GET = dt2 + (MJDguess - CalcGETBase()) * 24.0 * 60.0 * 60.0;
 	}
@@ -3571,7 +3581,7 @@ bool RTCC::CalculationMTP_J3(int fcn, LPVOID &pad, char * upString, char * upDes
 		SV sv = StateVectorCalc(calcParams.src);
 		OBJHANDLE hMoon = oapiGetObjectByName("Moon");
 
-		double dt = OrbMech::timetoperi_integ(sv.R, sv.V, sv.MJD, sv.gravref, hMoon);
+		double dt = OrbMech::timetoperi_integ(SystemParameters.AGCEpoch, sv.R, sv.V, sv.MJD, sv.gravref, hMoon);
 
 		SV sv_peri = coast(sv, dt);
 
