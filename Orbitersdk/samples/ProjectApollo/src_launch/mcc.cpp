@@ -42,7 +42,7 @@
 #include "MCC_Mission_F.h"
 #include "MCC_Mission_G.h"
 #include "MCC_Mission_H1.h"
-#include "MCC_Mission_J3.h"
+#include "MCC_Mission_JX.h"
 #include "MCC_Mission_SL.h"
 #include "rtcc.h"
 #include "LVDC.h"
@@ -691,9 +691,12 @@ void MCC::TimeStep(double simdt){
 					break;
 				case 17:
 					MissionType = MTP_J3;
+					break;
+				case 18:
+					MissionType = MTP_JX;
 					setState(MST_SV_PRELAUNCH);
 					break;
-				case 18: //For now
+				case 30: //For now
 					MissionType = MTP_SKYLAB;
 					setState(MST_SL_PRELAUNCH);
 					break;
@@ -860,8 +863,8 @@ void MCC::TimeStep(double simdt){
 					case MTP_H1:
 						setState(MST_H1_INSERTION);
 						break;
-					case MTP_J3:
-						setState(MST_J3_INSERTION);
+					case MTP_JX:
+						setState(MST_JX_INSERTION);
 						break;
 					}
 				}
@@ -912,11 +915,11 @@ void MCC::TimeStep(double simdt){
 			********************** */
 			MissionSequence_H1();
 			break;
-		case MTP_J3:
+		case MTP_JX:
 			/* *********************
-			* MISSION J3: APOLLO 17 *
+			* MISSION JX: CUSTOM J-MISSION *
 			********************** */
-			MissionSequence_J3();
+			MissionSequence_JX();
 			break;
 		case MTP_SKYLAB:
 			/* *********************
@@ -1317,7 +1320,7 @@ int MCC::subThread(){
 		subThreadMacro(subThreadType, subThreadMode);
 		Result = DONE;
 	}
-	else if (MissionType == MTP_D || MissionType == MTP_F || MissionType == MTP_G || MissionType == MTP_H1 || MissionType == MTP_J3)
+	else if (MissionType == MTP_D || MissionType == MTP_F || MissionType == MTP_G || MissionType == MTP_H1 || MissionType == MTP_JX)
 	{
 		//Try to find LEM
 		if (rtcc->calcParams.tgt == NULL)
@@ -4411,10 +4414,10 @@ void MCC::initiateAbort()
 		{
 			setState(MST_H1_ABORT_ORBIT);
 		}
-		else if (MissionType == MTP_J3)
+		/*else if (MissionType == MTP_JX)
 		{
-			setState(MST_J3_ABORT_ORBIT);
-		}
+			setState(MST_JX_ABORT_ORBIT);
+		}*/
 	}
 	else if (MissionPhase == MMST_TL_COAST)
 	{
@@ -4427,10 +4430,10 @@ void MCC::initiateAbort()
 		{
 			setState(MST_H1_ABORT);
 		}
-		else if (MissionType == MTP_J3)
+		/*else if (MissionType == MTP_JX)
 		{
-			setState(MST_J3_ABORT);
-		}
+			setState(MST_JX_ABORT);
+		}*/
 	}
 	else if (MissionPhase == MMST_LUNAR_ORBIT)
 	{
@@ -4443,10 +4446,10 @@ void MCC::initiateAbort()
 		{
 			setState(MST_H1_ABORT);
 		}
-		else if (MissionType == MTP_J3)
+		/*else if (MissionType == MTP_JX)
 		{
-			setState(MST_J3_ABORT);
-		}
+			setState(MST_JX_ABORT);
+		}*/
 	}
 	else if (MissionPhase == MMST_TE_COAST)
 	{
@@ -4459,10 +4462,10 @@ void MCC::initiateAbort()
 		{
 			setState(MST_H1_ABORT);
 		}
-		else if (MissionType == MTP_J3)
+		/*else if (MissionType == MTP_JX)
 		{
-			setState(MST_J3_ABORT);
-		}
+			setState(MST_JX_ABORT);
+		}*/
 	}
 }
 

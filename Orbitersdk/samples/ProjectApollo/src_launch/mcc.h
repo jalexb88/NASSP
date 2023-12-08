@@ -134,10 +134,11 @@
 #define MTP_J1				11
 #define MTP_J2				12
 #define MTP_J3				13
+#define MTP_JX				14 //Custom J-mission
 // SKYLAB is a manned CSM launched with a Saturn 1B to earth orbit to dock with the SKYLAB space station.
-#define MTP_SKYLAB			14
+#define MTP_SKYLAB			15
 // ASTP is a manned CSM launched with a Saturn 1B to earth orbit to dock with Soyuz 19.
-#define MTP_ASTP			15
+#define MTP_ASTP			16
 
 //UPDATE TYPES
 #define UTP_PADONLY				0
@@ -292,7 +293,7 @@ public:
 	void MissionSequence_F();
 	void MissionSequence_G();
 	void MissionSequence_H1();
-	void MissionSequence_J3();
+	void MissionSequence_JX();
 	void MissionSequence_SL();
 
 	RTCC *rtcc;												// Pointer to RTCC

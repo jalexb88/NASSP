@@ -75,12 +75,6 @@
     <ClCompile Include="..\..\src_launch\MCC_Mission_B.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-	<ClCompile Include="..\..\src_launch\MCC_Mission_J3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-	<ClCompile Include="..\..\src_launch\RTCC_Mission_J3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src_rtccmfd\LMGuidanceSim.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -153,6 +147,12 @@
     <ClCompile Include="..\..\src_launch\RTCC_Mission_SL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src_launch\MCC_Mission_JX.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src_launch\RTCC_Mission_JX.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src_launch\mcc.h">
@@ -170,10 +170,7 @@
     <ClInclude Include="..\..\src_rtccmfd\EntryCalculations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-	<ClInclude Include="..\..\src_launch\MCC_Mission_J3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-	<ClInclude Include="..\..\src_launch\MCC_Mission_H1.h">
+    <ClInclude Include="..\..\src_launch\MCC_Mission_H1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src_launch\MCC_Mission_G.h">
@@ -255,6 +252,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src_launch\MCC_Mission_SL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src_launch\MCC_Mission_JX.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
