@@ -692,13 +692,13 @@ void MCC::TimeStep(double simdt){
 				case 17:
 					MissionType = MTP_J3;
 					break;
-				case 18:
-					MissionType = MTP_JX;
-					setState(MST_SV_PRELAUNCH);
-					break;
-				case 30: //For now
+				case 18: //For now
 					MissionType = MTP_SKYLAB;
 					setState(MST_SL_PRELAUNCH);
+					break;
+				case 99: //Custom J missions
+					MissionType = MTP_JX;
+					setState(MST_SV_PRELAUNCH);
 					break;
 				default:
 					// If the ApolloNo is not on this list, you are expected to provide a mission type in the scenario file, which will override the default.
