@@ -42,18 +42,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 	srand((unsigned int)time(NULL));
 
-	//Update these for custom missions
-
-	//Tycho - January 10 1973
-	//double NominalLaunchGMT = OrbMech::HHMMSSToSS(2, 4, 0); //Nominal launch GMT
-	//double NominalPC_GET = 78.57479 * 3600.0; //Nominal PC GET
-	//double MJD_PTC = 41697.514583333; //Launch MJD plus 10 days
-
-	//Censorinus - April 14 1972
-	double NominalLaunchGMT = OrbMech::HHMMSSToSS(19, 31, 0); //Nominal launch GMT
-	double NominalPC_GET = 78.57479 * 3600.0; //Nominal PC GET
-	double MJD_PTC = 41431.646527778; //Launch MJD plus 10 days
-
 	switch (fcn) {
 	case 1: //GENERIC CMC CSM STATE VECTOR UPDATE
 	case 3: //GENERIC LGC CSM STATE VECTOR UPDATE
@@ -225,6 +213,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		//F62: Interpolate SFP
 		sprintf_s(Buff, "F62,,1,%.3lf;", Azi);
 		GMGMED(Buff);
+
+		//Copy flight plan LOI time to phasing slot for MCC calulation purposes
+		calcParams.Phasing = calcParams.LOI;
 	}
 	break;
 	case 11: //TLI SIMULATION
@@ -349,7 +340,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		MATRIX3 REFSMMAT;
 
 		refsopt.REFSMMATopt = 6;
-		refsopt.REFSMMATTime = MJD_PTC;
+		refsopt.REFSMMATTime = OrbMech::MJDfromGET(864000, CalcGETBase()); //10 days into mission
 
 		REFSMMAT = REFSMMATCalc(&refsopt);
 
@@ -382,7 +373,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		double TLIbase = calcParams.TLI - 5.0*60.0 - 45.0; //Approximate TLI ignition
 
-		double LOIGET = GETfromGMT(NominalLaunchGMT + NominalPC_GET);
+		double LOIGET = GETfromGMT(calcParams.TIGSTORE1 + calcParams.Phasing);
 
 		LOIGET -= 195.0;
 
@@ -589,6 +580,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 				sprintf(upDesc, "CSM state vector and V66, target load");
 			}
 		}
+
+		//Store flight plan TLAND for lunar orbit liftoff time update calculation
+		calcParams.TIGSTORE1 = CZTDTGTU.GETTD;
 	}
 	break;
 	case 25: //MCC-4
@@ -1044,9 +1038,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		GENERICPAD * form = (GENERICPAD *)pad;
 
 		SV svcm0, svcm1, svlm0, svlm1;
-		int emem[14], DEDA224, DEDA225, DEDA226, DEDA305, DEDA662, DEDA673;
 		double t_sunrise, t_TPI, TimeToPDI;
-		char buffer1[1000];
 
 		PDAPOpt opt;
 		PDAPResults res;
@@ -1057,6 +1049,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		svlm0 = StateVectorCalc(calcParams.tgt);
 
 		TimeToPDI = OrbMech::GETfromMJD(svlm0.MJD, CalcGETBase()) - calcParams.PDI;
+
+		//To fix bug with circular orbits
+		DeltaV_LVLH.x += 0.1;
 
 		if (abs(TimeToPDI) < 2.0*3600.0) //PDI-2
 		{
@@ -1101,6 +1096,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		opt.dt_step = 20.0;
 
 		PoweredDescentAbortProgram(opt, res);
+
+		int emem[14], DEDA224, DEDA225, DEDA226, DEDA305, DEDA662, DEDA673;
+		char buffer1[1000];
 
 		DEDA662 = DEDA673 = 0;
 		if (res.K1 < 0.0)
@@ -2791,7 +2789,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 141: //Liftoff Time Evaluation (TLC)
 	{
-		double dt = GetCMCClockZero() - NominalLaunchGMT;
+		double dt = GetCMCClockZero() - calcParams.TIGSTORE1;
 
 		if (abs(dt) < 60.0)
 		{
@@ -2815,11 +2813,12 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 142: //Liftoff time Evaluation REV 14
 	{
-		double GETfp, dt;
+		double dt, GETfp;
 
-		GETfp = OrbMech::HHMMSSToSS(104, 28, 55);
+		GETfp = OrbMech::HHMMSSToSS(104, 40, 57); //Nominal Apollo 15 lunar landing time (If using Apollo 15 flight data file)
+		//GETfp = calcParams.TIGSTORE1;
 
-		dt = GETfp - calcParams.PDI;
+		dt = GETfp - CZTDTGTU.GETTD;
 
 		if (abs(dt) < 120.0)
 		{
