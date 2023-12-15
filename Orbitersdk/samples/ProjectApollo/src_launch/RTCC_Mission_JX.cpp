@@ -2,7 +2,7 @@
 This file is part of Project Apollo - NASSP
 Copyright 2023
 
-RTCC Calculations for Mission JX
+RTCC Calculations for Mission JX (Generic MCC for custom J missions)
 
 Project Apollo is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -243,7 +243,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		PMSVCT(4, RTCC_MPT_CSM, &sv0);
 
 		//Add TLI to MPT
-		if (calcParams.TLI > 1.0)
+		if (GETEval2(1.0*3600.0 + 45.0*60.0))
 		{
 			//Second opportunity
 			GMGMED("M68,CSM,2;");
@@ -340,7 +340,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		MATRIX3 REFSMMAT;
 
 		refsopt.REFSMMATopt = 6;
-		refsopt.REFSMMATTime = OrbMech::MJDfromGET(864000, CalcGETBase()); //10 days into mission
+		refsopt.REFSMMATTime = OrbMech::MJDfromGET(864000.0, CalcGETBase()); //10 days into mission
 
 		REFSMMAT = REFSMMATCalc(&refsopt);
 
@@ -1677,6 +1677,35 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		dt2 = OrbMech::findelev_gs(SystemParameters.AGCEpoch, SystemParameters.MAT_J2000_BRCS, sv1.R, sv1.V, R_P, MJDguess, 152.0*RAD, sv1.gravref, LmkRange);
 
 		form->P22_ACQ_GET = dt2 + (MJDguess - CalcGETBase()) * 24.0 * 60.0 * 60.0;
+	}
+	break;
+	case 62: //LANDMARK TRACKING PAD REV 12 (XX-1)
+	case 63: //LANDMARK TRACKING PAD REV 13 (XX-1)
+	{
+		LMARKTRKPADOpt opt;
+		SV sv;
+
+		AP11LMARKTRKPAD * form = (AP11LMARKTRKPAD *)pad;
+
+		sv = StateVectorCalc(calcParams.src);
+
+		if (fcn == 62)
+		{
+			opt.LmkTime[0] = calcParams.PDI - 4.0*3600.0;
+		}
+		else
+		{
+			opt.LmkTime[0] = calcParams.PDI - 2.0*3600.0;
+		}
+
+		sprintf(form->LmkID[0], "XX-1");
+		opt.sv0 = sv;
+		opt.alt[0] = BZLAND.rad[RTCC_LMPOS_BEST] - OrbMech::R_Moon;
+		opt.lat[0] = BZLAND.lat[RTCC_LMPOS_BEST];
+		opt.lng[0] = BZLAND.lng[RTCC_LMPOS_BEST];
+		opt.entries = 1;
+
+		LandmarkTrackingPAD(&opt, *form);
 	}
 	break;
 	case 70: //PDI PAD
