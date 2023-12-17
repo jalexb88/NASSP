@@ -26,6 +26,9 @@ See http://nassp.sourceforge.net/license/ for more details.
 
 // MISSION STATES: MISSION J3
 
+//Pre-launch
+#define MST_JX_PRELAUNCH 9
+
 //Ground liftoff time update to TLI Simulation
 #define MST_JX_INSERTION		10
 //TLI Simulation to TLI+90 PAD

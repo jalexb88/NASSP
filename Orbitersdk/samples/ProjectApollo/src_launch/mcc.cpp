@@ -698,7 +698,7 @@ void MCC::TimeStep(double simdt){
 					break;
 				case 99: //Custom J missions
 					MissionType = MTP_JX;
-					setState(MST_SV_PRELAUNCH);
+					setState(MST_JX_PRELAUNCH);
 					break;
 				default:
 					// If the ApolloNo is not on this list, you are expected to provide a mission type in the scenario file, which will override the default.
@@ -4414,10 +4414,10 @@ void MCC::initiateAbort()
 		{
 			setState(MST_H1_ABORT_ORBIT);
 		}
-		/*else if (MissionType == MTP_JX)
+		else if (MissionType == MTP_JX)
 		{
 			setState(MST_JX_ABORT_ORBIT);
-		}*/
+		}
 	}
 	else if (MissionPhase == MMST_TL_COAST)
 	{
@@ -4430,10 +4430,10 @@ void MCC::initiateAbort()
 		{
 			setState(MST_H1_ABORT);
 		}
-		/*else if (MissionType == MTP_JX)
+		else if (MissionType == MTP_JX)
 		{
 			setState(MST_JX_ABORT);
-		}*/
+		}
 	}
 	else if (MissionPhase == MMST_LUNAR_ORBIT)
 	{
@@ -4446,10 +4446,10 @@ void MCC::initiateAbort()
 		{
 			setState(MST_H1_ABORT);
 		}
-		/*else if (MissionType == MTP_JX)
+		else if (MissionType == MTP_JX)
 		{
 			setState(MST_JX_ABORT);
-		}*/
+		}
 	}
 	else if (MissionPhase == MMST_TE_COAST)
 	{
@@ -4462,10 +4462,10 @@ void MCC::initiateAbort()
 		{
 			setState(MST_H1_ABORT);
 		}
-		/*else if (MissionType == MTP_JX)
+		else if (MissionType == MTP_JX)
 		{
 			setState(MST_JX_ABORT);
-		}*/
+		}
 	}
 }
 

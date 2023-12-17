@@ -46,11 +46,12 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 	//This RTCC calculation requires the following be defined in the launch scenario:
 	//RTCC_LOI XX.X  //SET TO NOMINAL PC GET IN SECONDS
+	//RTCC_TPI XX.X  //SET TO NOMINAL PLANE CHANGE GET IN SECONDS
 	//RTCC_LunarLiftoff XX.X  //SET TO NOMINAL LUNAR LIFTOFF GET IN SECONDS
-    //RTCC_TPI XX.X  //SET TO NOMINAL PLANE CHANGE GET IN SECONDS
     //RTCC_TEI XX.X  //SET TO NOMINAL TEI GET IN SECONDS
 	//RTCC_EI XX.X  //SET TO NOMINAL EI GET IN SECONDS
     //RTCC_TIGSTORE1 XX.X //SET TO NOMINAL LAUNCH GMT IN SECONDS
+	//PTPSite  //SET TO EOM (in RTCC Init file)
 
 	switch (fcn) {
 	case 1: //GENERIC CMC CSM STATE VECTOR UPDATE
@@ -166,13 +167,48 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 	}
 	break;
-	case 10: //GROUND LIFTOFF TIME UPDATE
+	case 10: //MISSION INITIALIZATION
 	{
 		char Buff[128];
 
 		//P80 MED: mission initialization
 		sprintf_s(Buff, "P80,1,CSM,%d,%d,%d;", GZGENCSN.MonthofLiftoff, GZGENCSN.DayofLiftoff, GZGENCSN.Year);
 		GMGMED(Buff);
+
+		GENERICPAD * form = (GENERICPAD *)pad;
+
+		Saturn *cm = (Saturn *)calcParams.src;
+		SaturnV *SatV = (SaturnV*)cm;
+		LVDCSV *lvdc = (LVDCSV*)SatV->iu->GetLVDC();
+
+		double day = 0.0;
+		double MJD_GRR = oapiGetSimMJD() - (SatV->GetMissionTime() + 17.0) / 24.0 / 3600.0;
+		double T_L = modf(MJD_GRR, &day)*24.0*3600.0;
+		double t_D = T_L - lvdc->T_LO;
+		//t_D = TABLE15.target[tgt_index].t_D;
+
+		double azi;
+
+		//Azimuth determination
+		if (t_D < lvdc->t_DS1)
+		{
+			azi = lvdc->hx[0][0] + lvdc->hx[0][1] * ((t_D - lvdc->t_D1) / lvdc->t_SD1) + lvdc->hx[0][2] * pow((t_D - lvdc->t_D1) / lvdc->t_SD1, 2) + lvdc->hx[0][3] * pow((t_D - lvdc->t_D1) / lvdc->t_SD1, 3) + lvdc->hx[0][4] * pow((t_D - lvdc->t_D1) / lvdc->t_SD1, 4);
+		}
+		else if (lvdc->t_DS1 <= t_D && t_D < lvdc->t_DS2)
+		{
+			azi = lvdc->hx[1][0] + lvdc->hx[1][1] * ((t_D - lvdc->t_D2) / lvdc->t_SD2) + lvdc->hx[1][2] * pow((t_D - lvdc->t_D2) / lvdc->t_SD2, 2) + lvdc->hx[1][3] * pow((t_D - lvdc->t_D2) / lvdc->t_SD2, 3) + lvdc->hx[1][4] * pow((t_D - lvdc->t_D2) / lvdc->t_SD2, 4);
+		}
+		else
+		{
+			azi = lvdc->hx[2][0] + lvdc->hx[2][1] * ((t_D - lvdc->t_D3) / lvdc->t_SD3) + lvdc->hx[2][2] * pow((t_D - lvdc->t_D3) / lvdc->t_SD3, 2) + lvdc->hx[2][3] * pow((t_D - lvdc->t_D3) / lvdc->t_SD3, 3) + lvdc->hx[2][4] * pow((t_D - lvdc->t_D3) / lvdc->t_SD3, 4);
+		}
+
+		sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f°", azi);
+	}
+	break;
+	case 11: //GROUND LIFTOFF TIME UPDATE
+	{
+		char Buff[128];
 
 		//P10 MED: Enter actual liftoff time
 		double TEPHEM0, tephem_scal;
@@ -228,7 +264,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		calcParams.Phasing = calcParams.LOI;
 	}
 	break;
-	case 11: //TLI SIMULATION
+	case 12: //TLI SIMULATION
 	{
 		if (PZMPTCSM.ManeuverNum > 0)
 		{
@@ -984,9 +1020,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (coe.e > 0.7)
 		{
-			sprintf(upMessage, "LOI scrubbed, burn PC+2 PAD");
-			//scrubbed = true;
-			//mcc->AbortMode = 6;
+			sprintf(upMessage, "LOI scrubbed, burn PC+2");
+			scrubbed = true;
+			mcc->AbortMode = 6;
 		}
 	}
 	break;

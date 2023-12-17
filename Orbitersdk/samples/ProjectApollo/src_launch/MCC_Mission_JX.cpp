@@ -38,11 +38,14 @@ void MCC::MissionSequence_JX()
 {
 	switch (MissionState)
 	{
+	case MST_JX_PRELAUNCH: //Scenario start to prelaunch
+		UpdateMacro(UTP_PADONLY, PT_GENERIC, SubStateTime > 5.0*60.0, 10, MST_SV_PRELAUNCH);
+		break;
 	case MST_JX_INSERTION: //Ground liftoff time update to TLI Simulation
-		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(1.0*3600.0 + 30.0*60.0), 10, MST_JX_EPO1);
+		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(1.0*3600.0 + 30.0*60.0), 11, MST_JX_EPO1);
 		break;
 	case MST_JX_EPO1: //TLI Simulation to TLI PAD
-		UpdateMacro(UTP_NONE, PT_NONE, true, 11, MST_JX_EPO2);
+		UpdateMacro(UTP_NONE, PT_NONE, true, 12, MST_JX_EPO2);
 		break;
 	case MST_JX_EPO2: //TLI PAD to SV Update
 		UpdateMacro(UTP_PADONLY, PT_TLIPAD, SubStateTime > 5.0*60.0, 14, MST_JX_EPO3);
@@ -250,10 +253,10 @@ void MCC::MissionSequence_JX()
 	case MST_JX_TRANSLUNAR22: //LOI update (preliminary) to LOI update (final)
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, rtcc->GETEval2(rtcc->calcParams.LOI - 1.0*3600.0), 27, MST_JX_TRANSLUNAR24);
 		break;
-	case MST_JX_TRANSLUNAR24: //LOI update (final) to Rev 1 Map Update
+	case MST_JX_TRANSLUNAR24: //LOI update (final) to Map Update
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, SubStateTime > 5.0*60.0, 28, MST_JX_TRANSLUNAR25);
 		break;
-	case MST_JX_TRANSLUNAR25: //Rev 1 Map Update to LOI Evaluation
+	case MST_JX_TRANSLUNAR25: //Map Update to LOI Evaluation
 		UpdateMacro(UTP_PADONLY, PT_AP10MAPUPDATE, rtcc->GETEval2(rtcc->TimeofIgnition + 7.0*60.0), 128, MST_JX_TRANSLUNAR26);
 		break;
 	case MST_JX_TRANSLUNAR26: //LOI Evaluation to Lunar orbit phase begin or PC+2
@@ -671,242 +674,27 @@ void MCC::MissionSequence_JX()
 		}
 	}
 	break;
-	/*case MST_JX_ABORT:
+	case MST_JX_ABORT:
 		if (AbortMode == 6)	//Translunar Coast
 		{
-			switch (SubState) {
-			case 0:
+			if (cm->GetStage() == CM_ENTRY_STAGE_SEVEN)
 			{
-				if (rtcc->GETEval2(OrbMech::HHMMSSToSS(65, 0, 0)))
-				{
-					setSubState(13);//Flyby
-				}
-				else
-				{
-					if (rtcc->GETEval2(OrbMech::HHMMSSToSS(55, 0, 0))) //LO+65
-					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(65, 0, 0);
-					}
-					if (rtcc->GETEval2(OrbMech::HHMMSSToSS(45, 0, 0))) //LO+55
-					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(55, 0, 0);
-					}
-					else if (rtcc->GETEval2(OrbMech::HHMMSSToSS(35, 0, 0))) //LO+45
-					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(45, 0, 0);
-					}
-					else if (rtcc->GETEval2(OrbMech::HHMMSSToSS(25, 0, 0))) //LO+35
-					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(35, 0, 0);
-					}
-					else if (rtcc->GETEval2(OrbMech::HHMMSSToSS(15, 0, 0))) //LO+25
-					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(25, 0, 0);
-					}
-					else if (rtcc->GETEval2(OrbMech::HHMMSSToSS(9, 0, 0))) //LO+15
-					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(15, 0, 0);
-					}
-					else if (rtcc->GETEval2(rtcc->calcParams.TLI + 90.0*60.0)) //LO+9
-					{
-						rtcc->calcParams.TEI = OrbMech::HHMMSSToSS(9, 0, 0);
-					}
-					else //TLI+90
-					{
-						rtcc->calcParams.TEI = rtcc->calcParams.TLI + 90.0*60.0;
-					}
-
-					setSubState(1);
-				}
-			}
-			break;
-			case 1:
-			{
-				if (rtcc->GETEval2(rtcc->calcParams.TEI + 10.0*60.0))
-				{
-					startSubthread(205, UTP_NONE); //Evaluate EI conditions
-					setSubState(2);
-				}
-			}
-			break;
-			case 2:
-				if (rtcc->calcParams.TEI > rtcc->calcParams.EI - 12.0 * 60 * 60)
-				{
-					setSubState(3);//Skip directly to normal entry procedures
-				}
-				else
-				{
-					setSubState(4);	//Include another course correction
-				}
-				break;
-			case 3:
-			{
-				if (rtcc->GETEval2(rtcc->calcParams.EI - 4.0*3600.0 - 35.0*60.0))
-				{
-					SlowIfDesired();
-					setState(MST_JX_TRANSEARTH_9);
-				}
-			}
-			break;
-			case 4:
-			{
-				if (rtcc->GETEval2(rtcc->calcParams.TEI + 4.0 * 60 * 60))
-				{
-					SlowIfDesired();
-					setSubState(5);
-				}
-			}
-			break;
-
-			case 5:
-				allocPad(8); // Allocate AP11 Maneuver Pad
-				if (padForm != NULL) {
-					// If success
-					startSubthread(300, UTP_PADWITHCMCUPLINK); // Start subthread to fill PAD
-				}
-				else {
-					// ERROR STATE
-				}
-				setSubState(6);
-				// FALL INTO
-			case 6: // Await pad read-up time (however long it took to compute it and give it to capcom)
-				if (SubStateTime > 1 && padState > -1) {
-					if (scrubbed)
-					{
-						if (upMessage[0] != 0)
-						{
-							addMessage(upMessage);
-						}
-						freePad();
-						scrubbed = false;
-						setSubState(11);
-					}
-					else
-					{
-
-						addMessage("You can has PAD");
-						if (padAutoShow == true && padState == 0) { drawPad(); }
-						// Completed. We really should test for P00 and proceed since that would be visible to the ground.
-						addMessage("Ready for uplink?");
-						sprintf(PCOption_Text, "Ready for uplink");
-						PCOption_Enabled = true;
-						setSubState(7);
-					}
-				}
-				break;
-			case 7: // Awaiting user response
-			case 8: // Negative response / not ready for uplink
-				break;
-			case 9: // Ready for uplink
-				if (SubStateTime > 1 && padState > -1) {
-					// The uplink should also be ready, so flush the uplink buffer to the CMC
-					this->CM_uplink_buffer();
-					// uplink_size = 0; // Reset
-					PCOption_Enabled = false; // No longer needed
-					if (upDescr[0] != 0)
-					{
-						addMessage(upDescr);
-					}
-					setSubState(10);
-				}
-				break;
-			case 10: // Await uplink completion
-				if (cm->pcm.mcc_size == 0) {
-					addMessage("Uplink completed!");
-					NCOption_Enabled = true;
-					sprintf(NCOption_Text, "Repeat uplink");
-					setSubState(11);
-				}
-				break;
-			case 11: // Await burn
-				if (rtcc->GETEval2(rtcc->calcParams.EI - 4.0*3600.0 - 35.0*60.0))
-				{
-					SlowIfDesired();
-					setState(MST_JX_TRANSEARTH_9);
-				}
-				break;
-			case 12: //Repeat uplink
-			{
-				NCOption_Enabled = false;
-				setSubState(5);
-			}
-			break;
-			case 13:
-			{
-				//Wait until LOI + 2.5 hours, then calculate Pericynthion time and EI conditions for return trajectory
-				if (rtcc->GETEval2(rtcc->calcParams.LOI + 2.5*3600.0))
-				{
-					EphemerisData sv = rtcc->StateVectorCalcEphem(rtcc->calcParams.src);
-					double dt = OrbMech::timetoperi(sv.R, sv.V, OrbMech::mu_Moon);
-					rtcc->calcParams.LOI = rtcc->GETfromGMT(sv.GMT + dt);
-
-					startSubthread(205, UTP_NONE);
-					setSubState(14);
-				}
-			}
-			break;
-			case 14: //Flyby, go to nominal TEC procedures
-			{
-				if (rtcc->calcParams.EI - rtcc->calcParams.LOI > 45.0*3600.0) //Is this a flyby or fast PC+2?
-				{
-					rtcc->calcParams.TEI = rtcc->calcParams.LOI;
-					setState(MST_JX_TRANSEARTH_1);
-				}
-				else
-				{
-					rtcc->calcParams.TEI = rtcc->calcParams.EI - 30.0*3600.0;
-					setSubState(4); //Go to genric MCC. Not enough time for the full transearth timeline.
-				}
-			}
-			break;
+				setState(MST_LANDING);
 			}
 		}
 		else if (AbortMode == 7) //Lunar Orbit
 		{
-			switch (SubState) {
-			case 0:
+			if (cm->GetStage() == CM_ENTRY_STAGE_SEVEN)
 			{
-				if (MoonRevTime > 900.0)
-				{
-					setSubState(1);
-				}
-			}
-			break;
-			case 1:
-			{
-				EphemerisData sv;
-				OELEMENTS coe;
-
-				sv = rtcc->StateVectorCalcEphem(rtcc->calcParams.src);
-
-				coe = OrbMech::coe_from_sv(sv.R, sv.V, OrbMech::mu_Moon);
-
-				if (coe.e > 0.7)
-				{
-					double dt = OrbMech::timetoperi(sv.R, sv.V, OrbMech::mu_Moon);
-					rtcc->calcParams.TEI = rtcc->GETfromGMT(sv.GMT + dt);
-
-					setState(MST_JX_TRANSEARTH_1);
-				}
-				else
-				{
-					setSubState(2);
-				}
-			}
-			break;
-			case 2:
-			{
-				if (MoonRevTime < 100.0)
-				{
-					setSubState(0);
-				}
-			}
-			break;
+				setState(MST_LANDING);
 			}
 		}
 		else if (AbortMode == 8)
 		{
-			//How to Abort?
-		}*/
+			if (cm->GetStage() == CM_ENTRY_STAGE_SEVEN)
+			{
+				setState(MST_LANDING);
+			}
+		}
 	}
 }
