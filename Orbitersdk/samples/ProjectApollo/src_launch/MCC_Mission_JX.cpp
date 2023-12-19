@@ -284,7 +284,7 @@ void MCC::MissionSequence_JX()
 		UpdateMacro(UTP_PADWITHCMCUPLINK, PT_AP11MNV, MoonRev >= 4 && MoonRevTime > 60.0*60.0, 30, MST_JX_LUNAR_ORBIT_LOI_DAY_4);
 		break;
 	case MST_JX_LUNAR_ORBIT_LOI_DAY_4: //SV update to DOI trim evaluation
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 9.0*3600.0), 5, MST_JX_LUNAR_ORBIT_LOI_DAY_5);
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 10.0*3600.0), 5, MST_JX_LUNAR_ORBIT_LOI_DAY_5);
 		break;
 	case MST_JX_LUNAR_ORBIT_LOI_DAY_5: //DOI trim evaluation to DOI trim update or SV update
 		UpdateMacro(UTP_NONE, PT_NONE, true, 31, MST_JX_LUNAR_ORBIT_LOI_DAY_6, scrubbed, rtcc->GETEval2(rtcc->calcParams.PDI - 8.0*3600.0), MST_JX_LUNAR_ORBIT_LOI_DAY_7);
@@ -308,7 +308,7 @@ void MCC::MissionSequence_JX()
 		UpdateMacro(UTP_NONE, PT_NONE, SubStateTime > 5.0, 145, MST_JX_LUNAR_ORBIT_LOI_DAY_12);
 		break;
 	case MST_JX_LUNAR_ORBIT_LOI_DAY_12: //landing site REFSMMAT to SV update
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 6.0*3600.0 + 5.0*60.0), 34, MST_JX_LUNAR_ORBIT_PDI_DAY_1);
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.PDI - 6.0*3600.0), 34, MST_JX_LUNAR_ORBIT_PDI_DAY_1);
 		break;
 	case MST_JX_LUNAR_ORBIT_PDI_DAY_1: //SV update to CSM DAP load
 		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, true, 5, MST_JX_LUNAR_ORBIT_PDI_DAY_2);
@@ -326,7 +326,7 @@ void MCC::MissionSequence_JX()
 		UpdateMacro(UTP_PADONLY, PT_AP10DAPDATA, SubStateTime > 3.0*60.0, 9, MST_JX_LUNAR_ORBIT_PDI_DAY_6);
 		break;
 	case MST_JX_LUNAR_ORBIT_PDI_DAY_6: //Abort constants update to LGC activation update
-		UpdateMacro(UTP_PADWITHLGCUPLINK, PT_GENERIC, SubStateTime > 5.0*60.0, 36, MST_JX_LUNAR_ORBIT_PDI_DAY_7);
+		UpdateMacro(UTP_PADWITHLGCUPLINK, PT_GENERIC, SubStateTime > 3.0*60.0, 36, MST_JX_LUNAR_ORBIT_PDI_DAY_7);
 		break;
 	case MST_JX_LUNAR_ORBIT_PDI_DAY_7: //LGC activation update to LGC clock sync elvaluation
 		UpdateMacro(UTP_LGCUPLINKONLY, PT_NONE, true, 35, MST_JX_LUNAR_ORBIT_PDI_DAY_8);

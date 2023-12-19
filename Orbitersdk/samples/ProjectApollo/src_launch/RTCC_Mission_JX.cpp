@@ -42,16 +42,14 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 	srand((unsigned int)time(NULL));
 
-	double GETland = OrbMech::HHMMSSToSS(104, 40, 57); //Nominal Apollo 15 lunar landing time (If using Apollo 15 flight data file)
-
-	//This RTCC calculation requires the following be defined in the launch scenario:
-	//RTCC_LOI XX.X  //SET TO NOMINAL PC GET IN SECONDS
-	//RTCC_TPI XX.X  //SET TO NOMINAL PLANE CHANGE GET IN SECONDS
-	//RTCC_LunarLiftoff XX.X  //SET TO NOMINAL LUNAR LIFTOFF GET IN SECONDS
-    //RTCC_TEI XX.X  //SET TO NOMINAL TEI GET IN SECONDS
-	//RTCC_EI XX.X  //SET TO NOMINAL EI GET IN SECONDS
-    //RTCC_TIGSTORE1 XX.X //SET TO NOMINAL LAUNCH GMT IN SECONDS
-	//PTPSite  //SET TO EOM (in RTCC Init file)
+	//To be flown with a mission generated from "Apollo Trajectory Design Program" by indy91
+	//Use APOLLONO 99 for MCC to use this RTCC caclulation
+	//Requires the following be defined in the launch scenario:
+	//RTCC_MISSIONFILE Apollo XX Constants
+	//RTCC_GZGENCSN_Year 19XX
+	//RTCC_GZGENCSN_MonthofLiftoff XX
+	//RTCC_GZGENCSN_DayofLiftoff XX
+	//RTCC_TIGSTORE1 XX.X //SET TO NOMINAL LAUNCH GMT IN SECONDS
 
 	switch (fcn) {
 	case 1: //GENERIC CMC CSM STATE VECTOR UPDATE
@@ -169,41 +167,37 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 10: //MISSION INITIALIZATION
 	{
+		GENERICPAD * form = (GENERICPAD *)pad;
+
+		Saturn *cm = (Saturn *)calcParams.src;
+		SaturnV *SatV = (SaturnV*)cm;
+
 		char Buff[128];
+
+		int hh, mm;
+		double ss;
 
 		//P80 MED: mission initialization
 		sprintf_s(Buff, "P80,1,CSM,%d,%d,%d;", GZGENCSN.MonthofLiftoff, GZGENCSN.DayofLiftoff, GZGENCSN.Year);
 		GMGMED(Buff);
 
-		GENERICPAD * form = (GENERICPAD *)pad;
+		//Predict liftoff time and simulate launch
+		double LOpred = RTCCPresentTimeGMT() + abs(SatV->MissionTime);
+		OrbMech::SStoHHMMSS(LOpred, hh, mm, ss);
+		sprintf_s(Buff, "P10,CSM,%d:%d:%.2lf,TRAJ;", hh, mm, ss);
+		GMGMED(Buff);
 
-		Saturn *cm = (Saturn *)calcParams.src;
-		SaturnV *SatV = (SaturnV*)cm;
-		LVDCSV *lvdc = (LVDCSV*)SatV->iu->GetLVDC();
+		//Initialize SFP
+		sprintf_s(Buff, "F62,,1,%.3lf;", GZLTRA.Azimuth * DEG);
+		GMGMED(Buff);
 
-		double day = 0.0;
-		double MJD_GRR = oapiGetSimMJD() - (SatV->GetMissionTime() + 17.0) / 24.0 / 3600.0;
-		double T_L = modf(MJD_GRR, &day)*24.0*3600.0;
-		double t_D = T_L - lvdc->T_LO;
-		//t_D = TABLE15.target[tgt_index].t_D;
+		//Compute flight plan times
+		calcParams.LOI = GETfromGMT(PZSFPTAB.blocks[0].GMT_pc2);
+		calcParams.Phasing = PZSFPTAB.blocks[0].GMT_pc2; //Save the LOI GMT for MCC calculations
+		calcParams.TPI = CZTDTGTU.GETTD + (double(PZMCCPLN.LOPC_M) * 7124.0); //TPI time temporarily used for LOPC time
+		calcParams.LunarLiftoff = calcParams.TPI + (double(PZMCCPLN.LOPC_N) * 7124.0);
 
-		double azi;
-
-		//Azimuth determination
-		if (t_D < lvdc->t_DS1)
-		{
-			azi = lvdc->hx[0][0] + lvdc->hx[0][1] * ((t_D - lvdc->t_D1) / lvdc->t_SD1) + lvdc->hx[0][2] * pow((t_D - lvdc->t_D1) / lvdc->t_SD1, 2) + lvdc->hx[0][3] * pow((t_D - lvdc->t_D1) / lvdc->t_SD1, 3) + lvdc->hx[0][4] * pow((t_D - lvdc->t_D1) / lvdc->t_SD1, 4);
-		}
-		else if (lvdc->t_DS1 <= t_D && t_D < lvdc->t_DS2)
-		{
-			azi = lvdc->hx[1][0] + lvdc->hx[1][1] * ((t_D - lvdc->t_D2) / lvdc->t_SD2) + lvdc->hx[1][2] * pow((t_D - lvdc->t_D2) / lvdc->t_SD2, 2) + lvdc->hx[1][3] * pow((t_D - lvdc->t_D2) / lvdc->t_SD2, 3) + lvdc->hx[1][4] * pow((t_D - lvdc->t_D2) / lvdc->t_SD2, 4);
-		}
-		else
-		{
-			azi = lvdc->hx[2][0] + lvdc->hx[2][1] * ((t_D - lvdc->t_D3) / lvdc->t_SD3) + lvdc->hx[2][2] * pow((t_D - lvdc->t_D3) / lvdc->t_SD3, 2) + lvdc->hx[2][3] * pow((t_D - lvdc->t_D3) / lvdc->t_SD3, 3) + lvdc->hx[2][4] * pow((t_D - lvdc->t_D3) / lvdc->t_SD3, 4);
-		}
-
-		sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f°", azi);
+		sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f", GZLTRA.Azimuth * DEG);
 	}
 	break;
 	case 11: //GROUND LIFTOFF TIME UPDATE
@@ -237,12 +231,17 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		sprintf_s(Buff, "P12,CSM,%d:%d:%.2lf,%.2lf;", hh, mm, ss, Azi);
 		GMGMED(Buff);
 
-		//P15: CMC, LGC and AGS clock zero
+		//P15: CMC, LGC
 		sprintf_s(Buff, "P15,AGC,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
 		sprintf_s(Buff, "P15,LGC,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
-		GMGMED("P15,AGS,,100:00:00;");
+
+		//AGS clock zero
+		double t_AGS = round((CZTDTGTU.GETTD - 18000.0) / 36000.0)*36000.0;
+		OrbMech::SStoHHMMSS(t_AGS, hh, mm, ss);
+		sprintf_s(Buff, "P15,AGS,,%03d:00:00;", hh);
+		GMGMED(Buff);
 
 		//P12: IU GRR and Azimuth
 		OrbMech::SStoHHMMSS(T_GRR, hh, mm, ss);
@@ -259,9 +258,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		//F62: Interpolate SFP
 		sprintf_s(Buff, "F62,,1,%.3lf;", Azi);
 		GMGMED(Buff);
-
-		//Copy flight plan LOI time to phasing slot for MCC calulation purposes
-		calcParams.Phasing = calcParams.LOI;
 	}
 	break;
 	case 12: //TLI SIMULATION
@@ -289,15 +285,15 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		PMSVCT(4, RTCC_MPT_CSM, &sv0);
 
 		//Add TLI to MPT
-		if (GETEval2(1.0*3600.0 + 45.0*60.0))
-		{
-			//Second opportunity
-			GMGMED("M68,CSM,2;");
-		}
-		else
+		if (calcParams.CSI < 100.0)
 		{
 			//First opportunity
 			GMGMED("M68,CSM,1;");
+		}
+		else
+		{
+			//Second opportunity
+			GMGMED("M68,CSM,2;");
 		}
 
 		//Add separation maneuver to MPT
@@ -344,16 +340,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->ExtATT = OrbMech::imulimit(_V(300.0 - form->SepATT.x, form->SepATT.y + 180.0, 360.0 - form->SepATT.z));
 
 		//Add Ordeal data
-		int yaw;
-		/*if (GETEval2(4.0*3600.0))
-		{
-			yaw = 3;
-		}
-		else
-		{*/
-			yaw = 0;
-		//}
-		sprintf(form->remarks, "\nXX%04.1f R2 Align\nXX%04.1f R2 Ign\nXX57:10 ORDEAL Start\nXXX00%d YAW", form->IgnATT.y, form->IgnATT.y - 6.0, yaw);
+		int yaw = 0;
+
+		sprintf(form->remarks, "\nXX%04.1f R2 Align\nXX%04.1f R2 Ign\nXX56:45 ORDEAL Start\nXXX00%d YAW", form->IgnATT.y, form->IgnATT.y - 7.0, yaw);
 
 		//Delete maneuvers from MPT
 		GMGMED("M62,CSM,1,D;");
@@ -376,7 +365,11 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 			GMGMED(Buff);
 
 			scrubbed = true;
-			calcParams.CSI = 9999.0; //Use as flag for TLI-2 Go/No-go
+			calcParams.CSI = 9999.0; //Use as flag for TLI-2
+		}
+		else
+		{
+			calcParams.CSI = 0.0;
 		}
 	}
 	break;
@@ -420,7 +413,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		double TLIbase = calcParams.TLI - 5.0*60.0 - 45.0; //Approximate TLI ignition
 
-		double LOIGET = GETfromGMT(calcParams.TIGSTORE1 + calcParams.Phasing);
+		double LOIGET = calcParams.Phasing;
 
 		LOIGET -= 195.0;
 
@@ -482,6 +475,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 
 		calcParams.LOI = PZMCCDIS.data[0].GET_LOI;
+		calcParams.TEI = PZMCCDIS.data[0].GET_TEI;
+		calcParams.EI = PZMCCDIS.data[0].GET_LC;
+
 		//Transfer MCC plan to skeleton flight plan table
 		GMGMED("F30,1;");
 
@@ -962,7 +958,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 			//MED K16
 			med_k16.Mode = 4;
 			med_k16.Sequence = 1;
-			med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.PDI - 8.5*3600.0;
+			med_k16.GETTH1 = med_k16.GETTH2 = med_k16.GETTH3 = med_k16.GETTH4 = calcParams.PDI - 9.0*3600.0;
 
 			LunarDescentPlanningProcessor(sv);
 
@@ -1093,9 +1089,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		svlm0 = StateVectorCalc(calcParams.tgt);
 
 		TimeToPDI = OrbMech::GETfromMJD(svlm0.MJD, CalcGETBase()) - calcParams.PDI;
-
-		//To fix issue that seems to be caused by circular orbit
-		DeltaV_LVLH.x += 0.1;
 
 		if (abs(TimeToPDI) < 2.0*3600.0) //PDI-2
 		{
@@ -1313,49 +1306,54 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	{
 		SV sv = StateVectorCalc(calcParams.src);
 
-		double P30TIG, TIG_imp;
-		VECTOR3 dV_LVLH, dV_imp;
-		EphemerisData sv_e;
+		if (fcn == 39)
+		{
+			double P30TIG, TIG_imp;
+			VECTOR3 dV_LVLH, dV_imp;
+			EphemerisData sv_e;
 
-		GMPOpt orbopt;
-		PMMMPTInput in;
+			GMPOpt orbopt;
+			PMMMPTInput in;
 
-		sv_e = StateVectorCalcEphem(calcParams.src);
+			sv_e = StateVectorCalcEphem(calcParams.src);
 
-		orbopt.sv_in = sv_e;
-		orbopt.TIG_GET = calcParams.PDI - 3.5*3600.0;
+			orbopt.sv_in = sv_e;
+			orbopt.TIG_GET = calcParams.PDI - 3.5*3600.0;
 
-		//Circularize at 60 NM
-		orbopt.ManeuverCode = RTCC_GMP_CRH;
-		orbopt.H_D = 60.0*1852.0;
+			//Circularize at 60 NM
+			orbopt.ManeuverCode = RTCC_GMP_CRH;
+			orbopt.H_D = 60.0*1852.0;
 
-		GeneralManeuverProcessor(&orbopt, dV_imp, TIG_imp);
+			GeneralManeuverProcessor(&orbopt, dV_imp, TIG_imp);
 
-		in.CONFIG = 1; //CSM
-		in.CSMWeight = calcParams.src->GetMass();
-		in.sv_before = PZGPMELM.SV_before;
-		in.V_aft = PZGPMELM.V_after;
-		in.DETU = 14.0; //Ullage
-		in.UT = true; //4 jets
-		in.IgnitionTimeOption = false;
-		in.IterationFlag = true;
-		in.LMWeight = 0.0;
-		in.Thruster = RTCC_ENGINETYPE_CSMSPS;
-		in.VC = RTCC_MANVEHICLE_CSM;
-		in.VehicleArea = PZMPTCSM.ConfigurationArea;
-		in.HeadsUpIndicator = true;
+			in.CONFIG = 1; //CSM
+			in.CSMWeight = calcParams.src->GetMass();
+			in.sv_before = PZGPMELM.SV_before;
+			in.V_aft = PZGPMELM.V_after;
+			in.DETU = 14.0; //Ullage
+			in.UT = true; //4 jets
+			in.IgnitionTimeOption = false;
+			in.IterationFlag = true;
+			in.LMWeight = 0.0;
+			in.Thruster = RTCC_ENGINETYPE_CSMSPS;
+			in.VC = RTCC_MANVEHICLE_CSM;
+			in.VehicleArea = PZMPTCSM.ConfigurationArea;
+			in.HeadsUpIndicator = true;
 
-		double GMT_TIG;
-		PoweredFlightProcessor(in, GMT_TIG, dV_LVLH);
-		P30TIG = GETfromGMT(GMT_TIG);
+			double GMT_TIG;
+			PoweredFlightProcessor(in, GMT_TIG, dV_LVLH);
+			P30TIG = GETfromGMT(GMT_TIG);
 
-		ExecuteManeuver(sv, P30TIG, dV_LVLH, 0, RTCC_ENGINETYPE_CSMSPS);
+			ExecuteManeuver(sv, P30TIG, dV_LVLH, 0, RTCC_ENGINETYPE_CSMSPS);
 
-		TimeofIgnition = P30TIG;
-		DeltaV_LVLH = dV_LVLH;
+			TimeofIgnition = P30TIG;
+			DeltaV_LVLH = dV_LVLH;
 
-		if (fcn == 40) {
-
+			//To fix issue that seems to be caused by circular orbit
+			DeltaV_LVLH.x += 0.3;
+		}
+		else
+		{
 			AP11ManPADOpt manopt;
 			AP11MNV * form = (AP11MNV *)pad;
 
@@ -1760,17 +1758,17 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		R_LS = OrbMech::r_from_latlong(BZLAND.lat[RTCC_LMPOS_BEST], BZLAND.lng[RTCC_LMPOS_BEST], BZLAND.rad[RTCC_LMPOS_BEST]);
 
-		if (GETEval2(GETland))
-		{
-			sv_CSM = sv0;
-			T2 = calcParams.PDI + 19.0*60.0 + 40.0;
-			t_sunrise = calcParams.PDI + 3.0*3600.0;
-		}
-		else
+		if (calcParams.CSI < 100.0) //PDI-1
 		{
 			sv_CSM = sv0;
 			T2 = calcParams.PDI + 21.0*60.0 + 26.0;
 			t_sunrise = calcParams.PDI + 5.0*3600.0;
+		}
+		else //PDI-2
+		{
+			sv_CSM = sv0;
+			T2 = calcParams.PDI + 19.0*60.0 + 40.0;
+			t_sunrise = calcParams.PDI + 3.0*3600.0;
 		}
 
 		t_TPI = FindOrbitalSunrise(sv_CSM, t_sunrise) - 16.0*60.0;
@@ -1882,7 +1880,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	{
 		int r = rand() % 20;
 
-		if (r < 5 && !GETEval2(GETland) && calcParams.tgt->GetDamageModel() > 0)
+		if (r < 5 && calcParams.CSI < 100.0 && calcParams.tgt->GetDamageModel() > 0)
 		{
 			sprintf(upMessage, "NO-GO for PDI");
 		}
@@ -1905,6 +1903,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		{
 			sprintf(upMessage, "Recycle to next PDI attempt");
 			scrubbed = true;
+			calcParams.CSI = 9999.0; //Use as flag for PDI-2
 		}
 	}
 	break;
@@ -2778,9 +2777,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 			double ss;
 
 			calcParams.LOI += dt;
-			CZTDTGTU.GETTD += dt;
-			calcParams.TPI += dt;
-			calcParams.LunarLiftoff += dt;
 			calcParams.TEI += dt;
 			calcParams.EI += dt;
 			TimeofIgnition += dt;
@@ -2795,7 +2791,10 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 142: //Liftoff time Evaluation REV 14
 	{
-		double dt;
+		double dt, GETland;
+
+		//GETland = CZTDTGTU.GETTD;
+		GETland = OrbMech::HHMMSSToSS(104, 40, 57); //Nominal Apollo 15 lunar landing time (If using Apollo 15 flight data file)
 
 		dt = GETland - CZTDTGTU.GETTD;
 
@@ -2863,13 +2862,17 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		sprintf_s(Buff, "P10,CSM,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
 
-		//P15: CMC, LGC and AGS clock zero
+		//P15: CMC, LGC
 		sprintf_s(Buff, "P15,AGC,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
 		sprintf_s(Buff, "P15,LGC,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
 
-		GMGMED("P15,AGS,,100:00:00;");
+		//AGS clock zero
+		double t_AGS = round((CZTDTGTU.GETTD - 18000.0) / 36000.0)*36000.0;
+		OrbMech::SStoHHMMSS(t_AGS, hh, mm, ss);
+		sprintf_s(Buff, "P15,AGS,,%03d:00:00;", hh);
+		GMGMED(Buff);
 	}
 	break;
 	case 146: //CMC clock sync evaluation
