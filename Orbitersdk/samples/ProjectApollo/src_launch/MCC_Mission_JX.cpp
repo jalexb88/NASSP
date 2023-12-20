@@ -51,7 +51,7 @@ void MCC::MissionSequence_JX()
 		UpdateMacro(UTP_PADONLY, PT_TLIPAD, SubStateTime > 5.0*60.0, 14, MST_JX_EPO3);
 		break;
 	case MST_JX_EPO3: //SV Update to TLI GO/NO-GO
-		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TLI - 20.0*60.0), 5, MST_JX_EPO4);
+		UpdateMacro(UTP_CMCUPLINKONLY, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TLI - 20.0*60.0), 13, MST_JX_EPO4);
 		break;
 	case MST_JX_EPO4: //TLI GO/NO-GO to TLI Evaluation
 		UpdateMacro(UTP_NONE, PT_NONE, rtcc->GETEval2(rtcc->calcParams.TLI + 18.0), 115, MST_JX_TRANSLUNAR1);

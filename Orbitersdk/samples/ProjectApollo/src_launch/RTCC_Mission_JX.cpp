@@ -315,6 +315,27 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		calcParams.TLI = GETfromGMT(PZMPTCSM.mantable[0].GMT_BO);
 	}
 	break;
+	case 13: //EPO SV UPDATE
+	{
+		double GMTSV;
+		EphemerisData sv, sv_uplink;
+		SV sv1;
+		char buffer1[1000];
+
+		sv = StateVectorCalcEphem(calcParams.src);
+
+		GMTSV = PZMPTCSM.TimeToBeginManeuver[0] - 10.0*60.0; //10 minutes before TB6
+		sv_uplink = coast(sv, GMTSV - sv.GMT, RTCC_MPT_CSM); //Coast with venting and drag taken into account
+
+		AGCStateVectorUpdate(buffer1, RTCC_MPT_CSM, RTCC_MPT_CSM, sv_uplink, true);
+
+		//Delete maneuvers from MPT
+		GMGMED("M62,CSM,1,D;");
+
+		//Set anchor vector time to 0, so that no trajectory updates are done anymore
+		EZANCHR1.AnchorVectors[9].Vector.GMT = 0.0;
+	}
+	break;
 	case 14: //TLI PAD
 	{
 		SV sv;
@@ -340,12 +361,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		int yaw = 0;
 
 		sprintf(form->remarks, "\nXX%04.1f R2 Align\nXX%04.1f R2 Ign\nXX56:45 ORDEAL Start\nXXX00%d YAW", form->IgnATT.y, form->IgnATT.y - 7.0, yaw);
-
-		//Delete maneuvers from MPT
-		GMGMED("M62,CSM,1,D;");
-
-		//Set anchor vector time to 0, so that no trajectory updates are done anymore
-		EZANCHR1.AnchorVectors[9].Vector.GMT = 0.0;
 	}
 	break;
 	case 15: //TLI Evaluation
