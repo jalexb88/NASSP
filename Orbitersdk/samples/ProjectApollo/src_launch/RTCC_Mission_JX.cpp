@@ -49,7 +49,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	//RTCC_GZGENCSN_Year 19XX
 	//RTCC_GZGENCSN_MonthofLiftoff XX
 	//RTCC_GZGENCSN_DayofLiftoff XX
-	//RTCC_TIGSTORE1 XX.X //SET TO NOMINAL LAUNCH GMT IN SECONDS
 
 	switch (fcn) {
 	case 1: //GENERIC CMC CSM STATE VECTOR UPDATE
@@ -191,11 +190,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		sprintf_s(Buff, "F62,,1,%.3lf;", GZLTRA.Azimuth * DEG);
 		GMGMED(Buff);
 
-		//Compute flight plan times
+		//Save LOI time
 		calcParams.LOI = GETfromGMT(PZSFPTAB.blocks[0].GMT_pc2);
 		calcParams.Phasing = PZSFPTAB.blocks[0].GMT_pc2; //Save the LOI GMT for MCC calculations
-		calcParams.TPI = CZTDTGTU.GETTD + (double(PZMCCPLN.LOPC_M) * 7124.0); //TPI time temporarily used for LOPC time
-		calcParams.LunarLiftoff = calcParams.TPI + (double(PZMCCPLN.LOPC_N) * 7124.0);
 
 		sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f", GZLTRA.Azimuth * DEG);
 	}
@@ -845,6 +842,8 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		calcParams.DOI = GETfromGMT(PZLDPELM.sv_man_bef[0].GMT);
 		calcParams.PDI = PZLDPDIS.PD_GETIG;
 		CZTDTGTU.GETTD = PZLDPDIS.PD_GETTD;
+		calcParams.TPI = CZTDTGTU.GETTD + (double(PZMCCPLN.LOPC_M) * 7124.0); //TPI time temporarily used for LOPC time
+		calcParams.LunarLiftoff = calcParams.TPI + (double(PZMCCPLN.LOPC_N) * 7124.0);
 
 		if (fcn == 29)
 		{
@@ -965,6 +964,8 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 			calcParams.DOI = GETfromGMT(PZLDPELM.sv_man_bef[0].GMT);
 			calcParams.PDI = PZLDPDIS.PD_GETIG;
 			CZTDTGTU.GETTD = PZLDPDIS.PD_GETTD;
+			calcParams.TPI = CZTDTGTU.GETTD + (double(PZMCCPLN.LOPC_M) * 7124.0); //TPI time temporarily used for LOPC time
+			calcParams.LunarLiftoff = calcParams.TPI + (double(PZMCCPLN.LOPC_N) * 7124.0);
 
 			engine = SPSRCSDecision(SPS_THRUST / (calcParams.src->GetMass() + calcParams.tgt->GetMass()), PZLDPDIS.DVVector[0]);
 			PoweredFlightProcessor(sv, PZLDPDIS.GETIG[0], engine, 0.0, PZLDPDIS.DVVector[0] * 0.3048, true, P30TIG, dV_LVLH);
@@ -2764,7 +2765,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 141: //Liftoff Time Evaluation (TLC)
 	{
-		double dt = GetCMCClockZero() - calcParams.TIGSTORE1;
+		double dt = CZTDTGTU.GETTD - (GETfromGMT(PZSFPTAB.blocks[1].GMT_pc2) + PZSFPTAB.blocks[1].dt_lls);
 
 		if (abs(dt) < 60.0)
 		{
@@ -2783,6 +2784,8 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			calcParams.Phasing = dt;
 
+			calcParams.TIGSTORE1 = CZTDTGTU.GETTD;
+
 			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
 
 			sprintf(upMessage, "Liftoff time update required\nAdjust MET by: %d:%d:%.2lf", hh, mm, ss);
@@ -2791,12 +2794,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 142: //Liftoff time Evaluation REV 14
 	{
-		double dt, GETland;
-
-		//GETland = CZTDTGTU.GETTD;
-		GETland = OrbMech::HHMMSSToSS(104, 40, 57); //Nominal Apollo 15 lunar landing time (If using Apollo 15 flight data file)
-
-		dt = GETland - CZTDTGTU.GETTD;
+		double dt = calcParams.TIGSTORE1 - CZTDTGTU.GETTD;
 
 		if (abs(dt) < 120.0)
 		{
