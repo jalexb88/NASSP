@@ -1,0 +1,37 @@
+///MISSION CONTROL SUPPORT FOR CUSTOM MISSIONS///
+
+These MCC profiles were designed be flown with a mission generated from "Apollo Trajectory Design Program" by indy91.
+https://github.com/indy91/ApolloTrajectoryDesignProgram
+
+/////////
+
+G-MISSION:
+
+No profile available yet.
+
+/////////
+
+H-MISSION:
+
+No profile available yet.
+
+/////////
+
+J-MISSION:
+
+A custom MCC profile based on Apollo 15 is available. It can be used for landing sites on the near side of the moon. It has been tested so far with landing sites as far west as Gassendi, as far east as Censorinus and as far south as Tycho. The ATDP should be set up to generate a mission supporting a CSM flown DOI.
+
+Use APOLLONO 99 for MCC to use this mission profile.
+
+/////////
+
+The following should be defined in the MCC vessel of the launch scenario:
+
+RTCC_BEGIN
+  RTCC_MISSIONFILE Apollo XX Constants
+  RTCC_GZGENCSN_Year 19XX
+  RTCC_GZGENCSN_MonthofLiftoff XX
+  RTCC_GZGENCSN_DayofLiftoff XX
+RTCC_END
+
+And of course MISSIONTRACKING 1

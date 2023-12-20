@@ -42,13 +42,8 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 	srand((unsigned int)time(NULL));
 
-	//To be flown with a mission generated from "Apollo Trajectory Design Program" by indy91
-	//Use APOLLONO 99 for MCC to use this RTCC caclulation
-	//Requires the following be defined in the launch scenario:
-	//RTCC_MISSIONFILE Apollo XX Constants
-	//RTCC_GZGENCSN_Year 19XX
-	//RTCC_GZGENCSN_MonthofLiftoff XX
-	//RTCC_GZGENCSN_DayofLiftoff XX
+	//This mission profile is based on Apollo 15 and has a CSM flown DOI.
+	//See "MCC for custom missions.txt" in Doc\Project Apollo - NASSP\Programmers Notes
 
 	switch (fcn) {
 	case 1: //GENERIC CMC CSM STATE VECTOR UPDATE
@@ -846,6 +841,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		//MED K17
 		GZGENCSN.LDPPPoweredDescentSimFlag = false;
+		GZGENCSN.LDPPDwellOrbits = PZMCCPLN.REVS2;
 
 		//MED K16
 		med_k16.Mode = 4;

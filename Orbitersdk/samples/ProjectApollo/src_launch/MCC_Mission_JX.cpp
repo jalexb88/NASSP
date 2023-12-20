@@ -34,6 +34,9 @@ See http://nassp.sourceforge.net/license/ for more details.
 
 using namespace nassp;
 
+//This mission profile is based on Apollo 15 and has a CSM flown DOI.
+//See "MCC for custom missions.txt" in Doc\Project Apollo - NASSP\Programmers Notes
+
 void MCC::MissionSequence_JX()
 {
 	switch (MissionState)
