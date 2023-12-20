@@ -324,6 +324,13 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		AGCStateVectorUpdate(buffer1, RTCC_MPT_CSM, RTCC_MPT_CSM, sv_uplink, true);
 
+		sprintf(uplinkdata, "%s", buffer1);
+		if (upString != NULL) {
+			// give to mcc
+			strncpy(upString, uplinkdata, 1024 * 3);
+			sprintf(upDesc, "CSM state vector and V66");
+		}
+
 		//Delete maneuvers from MPT
 		GMGMED("M62,CSM,1,D;");
 
@@ -420,7 +427,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		double TLIbase = calcParams.TLI - 5.0*60.0 - 45.0; //Approximate TLI ignition
 
-		double LOIGET = calcParams.Phasing;
+		double LOIGET = GETfromGMT(calcParams.Phasing);
 
 		LOIGET -= 195.0;
 
