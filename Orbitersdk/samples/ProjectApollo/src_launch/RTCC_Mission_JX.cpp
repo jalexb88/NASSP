@@ -34,6 +34,9 @@ See http://nassp.sourceforge.net/license/ for more details.
 #include "mcc.h"
 #include "rtcc.h"
 
+//This mission profile is based on Apollo 15 and has a CSM flown DOI.
+//See "MCC for custom missions.txt" in Doc\Project Apollo - NASSP\Programmers Notes
+
 bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDesc, char * upMessage)
 {
 	char uplinkdata[1024 * 3];
@@ -41,9 +44,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	bool scrubbed = false;
 
 	srand((unsigned int)time(NULL));
-
-	//This mission profile is based on Apollo 15 and has a CSM flown DOI.
-	//See "MCC for custom missions.txt" in Doc\Project Apollo - NASSP\Programmers Notes
 
 	switch (fcn) {
 	case 1: //GENERIC CMC CSM STATE VECTOR UPDATE
@@ -186,8 +186,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		GMGMED(Buff);
 
 		//Save LOI time
-		calcParams.LOI = GETfromGMT(PZSFPTAB.blocks[0].GMT_pc2);
-		calcParams.Phasing = PZSFPTAB.blocks[0].GMT_pc2; //Save the LOI GMT for MCC calculations
+		calcParams.LOI = calcParams.Phasing = GETfromGMT(PZSFPTAB.blocks[0].GMT_pc2);
 
 		sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f", GZLTRA.Azimuth * DEG);
 	}
@@ -246,10 +245,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		EMSGSUPP(1, 1);
 		//Make telemetry matrix current
 		GMGMED("G00,CSM,TLM,CSM,CUR;");
-
-		//F62: Interpolate SFP
-		sprintf_s(Buff, "F62,,1,%.3lf;", Azi);
-		GMGMED(Buff);
 	}
 	break;
 	case 12: //TLI SIMULATION
@@ -372,13 +367,17 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		if (lvdc->LVDC_Timebase == 5)
 		{
+			scrubbed = true;
+
 			char Buff[128];
 
 			//F62: Interpolate SFP for 2nd opportunity
 			sprintf_s(Buff, "F62,,2,%.3lf;", lvdc->Azimuth*DEG);
 			GMGMED(Buff);
 
-			scrubbed = true;
+			//Save LOI time
+			calcParams.LOI = calcParams.Phasing = GETfromGMT(PZSFPTAB.blocks[0].GMT_pc2);
+
 			calcParams.CSI = 9999.0; //Use as flag for TLI-2
 		}
 		else
@@ -427,7 +426,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		double TLIbase = calcParams.TLI - 5.0*60.0 - 45.0; //Approximate TLI ignition
 
-		double LOIGET = GETfromGMT(calcParams.Phasing);
+		double LOIGET = calcParams.Phasing;
 
 		LOIGET -= 195.0;
 
@@ -2802,12 +2801,23 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			calcParams.Phasing = dt;
 
-			calcParams.TIGSTORE1 = CZTDTGTU.GETTD;
+			char sign[8];
 
-			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
+			if (dt >= 0.0)
+			{
+				sprintf(sign, "+");
+			}
+			else
+			{
+				sprintf(sign, "-");
+			}
 
-			sprintf(upMessage, "Liftoff time update required\nAdjust MET by: %d:%d:%.2lf", hh, mm, ss);
+			OrbMech::SStoHHMMSS(abs(dt), hh, mm, ss);
+
+			sprintf(upMessage, "Liftoff time update required\nAdjust GET by: %s%03d:%02d:%0.2lf", sign, hh, mm, ss);
 		}
+
+		calcParams.TIGSTORE1 = CZTDTGTU.GETTD;
 	}
 	break;
 	case 142: //Liftoff time Evaluation REV 14
@@ -2836,9 +2846,20 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 			calcParams.Phasing = dt;
 
-			OrbMech::SStoHHMMSS(dt, hh, mm, ss);
+			char sign[8];
 
-			sprintf(upMessage, "Liftoff time update required\nAdjust MET by: %d:%d:%.2lf", hh, mm, ss);
+			if (dt >= 0.0)
+			{
+				sprintf(sign, "+");
+			}
+			else
+			{
+				sprintf(sign, "-");
+			}
+
+			OrbMech::SStoHHMMSS(abs(dt), hh, mm, ss);
+
+			sprintf(upMessage, "Liftoff time update required\nAdjust GET by: %s%03d:%02d:%0.2lf", sign, hh, mm, ss);
 		}
 	}
 	break;
