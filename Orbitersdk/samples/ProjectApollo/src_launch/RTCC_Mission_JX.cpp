@@ -185,8 +185,11 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		sprintf_s(Buff, "F62,,1,%.3lf;", GZLTRA.Azimuth * DEG);
 		GMGMED(Buff);
 
-		//Save LOI time
+		//Set mission parameters
 		calcParams.LOI = calcParams.Phasing = GETfromGMT(PZSFPTAB.blocks[0].GMT_pc2);
+		PZMCCPLN.SITEROT = -GZGENCSN.LDPPDescentFlightArc;
+		PZLOIPLN.DW = PZMCCPLN.SITEROT * DEG;
+		GZGENCSN.LDPPDwellOrbits = PZMCCPLN.REVS2;
 
 		sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f", GZLTRA.Azimuth * DEG);
 	}
@@ -867,7 +870,6 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		//MED K17
 		GZGENCSN.LDPPPoweredDescentSimFlag = false;
-		GZGENCSN.LDPPDwellOrbits = PZMCCPLN.REVS2;
 
 		//MED K16
 		med_k16.Mode = 4;
