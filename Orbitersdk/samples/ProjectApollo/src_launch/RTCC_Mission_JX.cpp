@@ -965,7 +965,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 			double apo, peri;
 			OrbMech::periapo(sv.R, sv.V, OrbMech::mu_Moon, apo, peri);
 
-			if (((peri - OrbMech::R_Moon) >= 30000.0 / 3.2808399) && (peri - OrbMech::R_Moon) <= 70000.0 / 3.2808399)
+			peri -= OrbMech::R_Moon;
+
+			if (peri >= GZGENCSN.LDPPHeightofPDI - (20000.0*0.3048) && peri <= GZGENCSN.LDPPHeightofPDI + (20000.0*0.3048))
 			{
 				scrubbed = true;
 				sprintf(upMessage, "DOI trim scrubbed");
