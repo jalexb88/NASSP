@@ -643,11 +643,20 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		VECTOR3 dV_LVLH;
 		EphemerisData sv;
 		double P30TIG, h_peri, h_peri_tgt, h_node, h_node_tgt, CSMmass, LMmass, ApsidRot;
-		int engine;
+		int engine, sol;
 
 		AP11MNV * form = (AP11MNV *)pad;
 
 		sv = StateVectorCalcEphem(calcParams.src);
+
+		if (PZMCCPLN.REVS1 >= 2.0)
+		{
+			sol = 0;
+		}
+		else
+		{
+			sol = 1;
+		}
 
 		bool loierr = PMMLRBTI(sv);
 
@@ -657,8 +666,8 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		if (loierr == false)
 		{
 			h_peri = PZLRBTI.h_pc;
-			h_node = PZLRBTI.sol[1].H_ND;
-			ApsidRot = PZLRBTI.sol[1].f_ND_E - PZLRBTI.sol[1].f_ND_H;
+			h_node = PZLRBTI.sol[sol].H_ND;
+			ApsidRot = PZLRBTI.sol[sol].f_ND_E - PZLRBTI.sol[sol].f_ND_H;
 			while (ApsidRot > 180.0)
 			{
 				ApsidRot -= 360.0;
@@ -676,7 +685,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 					if (abs(ApsidRot) < 45.0)
 					{
 						scrubbed = true;
-						calcParams.LOI = PZLRBTI.sol[1].GETLOI;
+						calcParams.LOI = PZLRBTI.sol[sol].GETLOI;
 					}
 				}
 			}
@@ -761,16 +770,27 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		VECTOR3 dV_LVLH, dv;
 		EphemerisData sv;
 
+		int sol;
+
 		AP11MNV * form = (AP11MNV *)pad;
 
 		sv = StateVectorCalcEphem(calcParams.src); //State vector for uplink
 		CSMmass = calcParams.src->GetMass();
 		LMmass = calcParams.tgt->GetMass();
 
+		if (PZMCCPLN.REVS1 >= 2.0)
+		{
+			sol = 0;
+		}
+		else
+		{
+			sol = 1;
+		}
+
 		PMMLRBTI(sv);
 
-		tig = GETfromGMT(PZLRBELM.sv_man_bef[1].GMT);
-		dv = PZLRBELM.V_man_after[1] - PZLRBELM.sv_man_bef[1].V;
+		tig = GETfromGMT(PZLRBELM.sv_man_bef[sol].GMT);
+		dv = PZLRBELM.V_man_after[sol] - PZLRBELM.sv_man_bef[sol].V;
 		PoweredFlightProcessor(sv, CSMmass, tig, RTCC_ENGINETYPE_CSMSPS, LMmass, dv, false, P30TIG, dV_LVLH);
 
 		refsopt.REFSMMATopt = 0;
