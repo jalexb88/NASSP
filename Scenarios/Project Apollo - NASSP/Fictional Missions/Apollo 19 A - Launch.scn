@@ -47,11 +47,11 @@ BEGIN_ENVIRONMENT
 END_ENVIRONMENT
 
 BEGIN_FOCUS
-  Ship Discovery
+  Ship Starship
 END_FOCUS
 
 BEGIN_CAMERA
-  TARGET Discovery
+  TARGET Starship
   MODE Extern
   POS 2.44 0.0 -90.0
   TRACKMODE TargetRelative
@@ -62,11 +62,11 @@ BEGIN_PANEL
 END_PANEL
 
 BEGIN_FOCUS
-  Ship Discovery
+  Ship Starship
 END_FOCUS
 
 BEGIN_CAMERA
-  TARGET Discovery
+  TARGET Starship
   MODE Extern
   POS 2.44 0.0 -90.0
   TRACKMODE TargetRelative
@@ -77,7 +77,7 @@ BEGIN_PANEL
 END_PANEL
 
 BEGIN_SHIPS
-Discovery:ProjectApollo\Saturn5
+Starship:ProjectApollo\Saturn5
   STATUS Landed Earth
   BASE Cape Canaveral:2
   POS -80.6041140 28.6082888
@@ -102,7 +102,7 @@ Discovery:ProjectApollo\Saturn5
   SMFUELLOAD 18461.028022052
   CMFUELLOAD 110.903334465
   LANG English
-  LEMN Ares
+  LEMN Enterprise
   LMDSCFUEL 8872.94715
   LMASCFUEL 2375.46324
   LMDSCEMPTY 2802.74725
@@ -902,19 +902,19 @@ Crawler-Transporter:ProjectApollo\Crawler
   STATUS Landed Earth
   POS -80.6208716 28.5950241
   HEADING 65.81
-  LVNAME Discovery
+  LVNAME Starship
 END
 ML:ProjectApollo\ML
   STATUS Landed Earth
   POS -80.6041122 28.6083723
   HEADING 0.58
-  LVNAME Discovery
+  LVNAME Starship
 END
 VAB:ProjectApollo\VAB
   STATUS Landed Earth
   POS -80.6509353 28.5860469
   HEADING 75.67
-  LVNAME Discovery
+  LVNAME Starship
 END
 MSS:ProjectApollo\MSS
   STATUS Landed Earth
@@ -938,9 +938,9 @@ MCC:ProjectApollo\MCC
   POS -95.08833333 29.55805556
   HEADING 270.00
   MISSIONTRACKING 1
-  CSMNAME Discovery
+  CSMNAME Starship
   LVNAME AS-514-S4BSTG
-  LEMNAME Ares
+  LEMNAME Enterprise
   RTCC_BEGIN
     RTCC_MISSIONFILE CPRN 73-04-08 Constants
     RTCC_GZGENCSN_Year 1973
