@@ -2101,7 +2101,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		//Also update AGS time here
 		char Buff[128];
 
-		double t_AGS = round((calcParams.LunarLiftoff - 18000.0) / 36000.0)*36000.0;
+		double t_AGS = round((calcParams.LunarLiftoff - 3600.0 - 18000.0) / 36000.0)*36000.0;
 
 		OrbMech::SStoHHMMSS(t_AGS, hh, mm, ss);
 
