@@ -191,7 +191,14 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		PZLOIPLN.DW = PZMCCPLN.SITEROT * DEG;
 		GZGENCSN.LDPPDwellOrbits = PZMCCPLN.REVS2;
 
-		sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f", GZLTRA.Azimuth * DEG);
+		if (GZLTRA.Azimuth == 0.0)
+		{
+			sprintf(form->paddata, "OUTSIDE LIMITS OF LAUNCH AZIMUTH POLYNOMIAL");
+		}
+		else
+		{
+			sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f", GZLTRA.Azimuth * DEG);
+		}
 	}
 	break;
 	case 11: //GROUND LIFTOFF TIME UPDATE
@@ -232,7 +239,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		GMGMED(Buff);
 
 		//AGS clock zero
-		double t_AGS = round((CZTDTGTU.GETTD - 18000.0) / 36000.0)*36000.0;
+		double t_AGS = round((CZTDTGTU.GETTD - (3.25 * 3600.0) - 18000.0) / 36000.0)*36000.0;
 		OrbMech::SStoHHMMSS(t_AGS, hh, mm, ss);
 		sprintf_s(Buff, "P15,AGS,,%03d:00:00;", hh);
 		GMGMED(Buff);
@@ -1257,6 +1264,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		AP11ManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "CSM SEP");
+		form->Weight = 0.0;
 		form->type = 2;
 	}
 	break;
@@ -2445,6 +2453,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		form->GETI = calcParams.SEP;
 		form->dV = _V(-1.0, 0, 0);
 		//form->Att = _V(014.0, form->Att.y, 343.0); //Apollo 15 jettison R and Y
+		form->Weight = 0.0;
 
 		form->type = 2;
 
@@ -2806,7 +2815,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 	break;
 	case 141: //Liftoff Time Evaluation (TLC)
 	{
-		double dt = CZTDTGTU.GETTD - (GETfromGMT(PZSFPTAB.blocks[1].GMT_pc2) + PZSFPTAB.blocks[1].dt_lls);
+		double dt = CZTDTGTU.GETTD - (GETfromGMT(PZSFPTAB.blocks[1].GMT_pc2) + (PZSFPTAB.blocks[1].dt_lls + 5.0*60.0));
 
 		if (abs(dt) < 60.0)
 		{
@@ -2844,7 +2853,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		calcParams.TIGSTORE1 = CZTDTGTU.GETTD;
 	}
 	break;
-	case 142: //Liftoff time Evaluation REV 14
+	case 142: //Liftoff time Evaluation (PDI day)
 	{
 		double dt = calcParams.TIGSTORE1 - CZTDTGTU.GETTD;
 
@@ -2930,7 +2939,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		GMGMED(Buff);
 
 		//AGS clock zero
-		double t_AGS = round((CZTDTGTU.GETTD - 18000.0) / 36000.0)*36000.0;
+		double t_AGS = round((CZTDTGTU.GETTD - (3.25 * 3600.0) - 18000.0) / 36000.0)*36000.0;
 		OrbMech::SStoHHMMSS(t_AGS, hh, mm, ss);
 		sprintf_s(Buff, "P15,AGS,,%03d:00:00;", hh);
 		GMGMED(Buff);
