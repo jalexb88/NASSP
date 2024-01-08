@@ -181,22 +181,22 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		sprintf_s(Buff, "P10,CSM,%d:%d:%.2lf,TRAJ;", hh, mm, ss);
 		GMGMED(Buff);
 
-		//Initialize SFP
-		sprintf_s(Buff, "F62,,1,%.3lf;", GZLTRA.Azimuth * DEG);
-		GMGMED(Buff);
-
-		//Set mission parameters
-		calcParams.LOI = calcParams.Phasing = GETfromGMT(PZSFPTAB.blocks[0].GMT_pc2);
-		PZMCCPLN.SITEROT = -GZGENCSN.LDPPDescentFlightArc;
-		PZLOIPLN.DW = PZMCCPLN.SITEROT * DEG;
-		GZGENCSN.LDPPDwellOrbits = PZMCCPLN.REVS2;
-
 		if (GZLTRA.Azimuth == 0.0)
 		{
 			sprintf(form->paddata, "OUTSIDE LIMITS OF LAUNCH AZIMUTH POLYNOMIAL");
 		}
 		else
 		{
+			//Initialize SFP
+			sprintf_s(Buff, "F62,,1,%.3lf;", GZLTRA.Azimuth * DEG);
+			GMGMED(Buff);
+
+			//Set mission parameters
+			calcParams.LOI = calcParams.Phasing = GETfromGMT(PZSFPTAB.blocks[0].GMT_pc2);
+			PZMCCPLN.SITEROT = -GZGENCSN.LDPPDescentFlightArc;
+			PZLOIPLN.DW = PZMCCPLN.SITEROT * DEG;
+			GZGENCSN.LDPPDwellOrbits = PZMCCPLN.REVS2;
+
 			sprintf(form->paddata, "LAUNCH AZIMUTH: %.2f", GZLTRA.Azimuth * DEG);
 		}
 	}
