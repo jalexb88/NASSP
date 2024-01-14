@@ -211,7 +211,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		//Get TEPHEM
 		TEPHEM0 = 41133.;
-		tephem_scal = GetTEPHEMFromAGC(&cm->agc.vagc);
+		tephem_scal = GetTEPHEMFromAGC(&cm->agc.vagc, true);
 		double LaunchMJD = (tephem_scal / 8640000.) + TEPHEM0;
 		LaunchMJD = (LaunchMJD - SystemParameters.GMTBASE)*24.0;
 
@@ -2920,7 +2920,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		//Get TEPHEM
 		TEPHEM0 = 41133.;
-		tephem_scal = GetTEPHEMFromAGC(&cm->agc.vagc);
+		tephem_scal = GetTEPHEMFromAGC(&cm->agc.vagc, true);
 		double LaunchMJD = (tephem_scal / 8640000.) + TEPHEM0;
 		LaunchMJD = (LaunchMJD - SystemParameters.GMTBASE)*24.0;
 
@@ -2953,13 +2953,13 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		if (fcn == 146)
 		{
 			Saturn *cm = (Saturn *)calcParams.src;
-			tephem = GetTEPHEMFromAGC(&cm->agc.vagc);
+			tephem = GetTEPHEMFromAGC(&cm->agc.vagc, true);
 			t_AGC = GetClockTimeFromAGC(&cm->agc.vagc) / 100.0;
 		}
 		else
 		{
 			LEM *lem = (LEM *)calcParams.tgt;
-			tephem = GetTEPHEMFromAGC(&lem->agc.vagc);
+			tephem = GetTEPHEMFromAGC(&lem->agc.vagc, false);
 			t_AGC = GetClockTimeFromAGC(&lem->agc.vagc) / 100.0;
 		}
 
