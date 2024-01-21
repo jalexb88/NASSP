@@ -177,7 +177,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 
 		//Predict liftoff time and simulate launch
 		double LOpred = RTCCPresentTimeGMT() + abs(SatV->MissionTime);
-		OrbMech::SStoHHMMSS(LOpred, hh, mm, ss);
+		OrbMech::SStoHHMMSS(LOpred, hh, mm, ss, 0.01);
 		sprintf_s(Buff, "P10,CSM,%d:%d:%.2lf,TRAJ;", hh, mm, ss);
 		GMGMED(Buff);
 
@@ -218,7 +218,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		int hh, mm;
 		double ss;
 
-		OrbMech::SStoHHMMSS(LaunchMJD*3600.0, hh, mm, ss);
+		OrbMech::SStoHHMMSS(LaunchMJD*3600.0, hh, mm, ss, 0.01);
 
 		sprintf_s(Buff, "P10,CSM,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
@@ -245,7 +245,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		GMGMED(Buff);
 
 		//P12: IU GRR and Azimuth
-		OrbMech::SStoHHMMSS(T_GRR, hh, mm, ss);
+		OrbMech::SStoHHMMSS(T_GRR, hh, mm, ss, 0.01);
 		sprintf_s(Buff, "P12,IU1,%d:%d:%.2lf,%.2lf;", hh, mm, ss, Azi);
 		GMGMED(Buff);
 
@@ -463,7 +463,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		F23time = LOIGET - 11.0*60.0;
 		while (PZMCCDIS.data[0].GET_LOI < LOIGET - 5.0 || init)
 		{
-			OrbMech::SStoHHMMSS(F23time, hh, mm, ss);
+			OrbMech::SStoHHMMSS(F23time, hh, mm, ss, 0.01);
 			sprintf_s(Buff, "F23,%d:%d:%.2lf,%d:%d:%.2lf;", hh, mm, ss, hh, mm + 10, ss);
 			GMGMED(Buff);
 			TranslunarMidcourseCorrectionProcessor(sv, CSMmass, LMmass);
@@ -1599,7 +1599,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		}
 
 		agsclockzero = GETfromGMT(GetAGSClockZero());
-		OrbMech::SStoHHMMSS(agsclockzero, hh, mm, ss);
+		OrbMech::SStoHHMMSS(agsclockzero, hh, mm, ss, 0.01);
 
 		sprintf(form->paddata, "K-FACTOR: %03d:%02d:%.2lf", hh, mm, ss);//
 	}
@@ -1619,7 +1619,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		t_lng = OrbMech::P29TimeOfLongitude(SystemParameters.MAT_J2000_BRCS, sv.R, sv.V, sv.MJD, GetGravref(BODY_MOON), BZLAND.lng[RTCC_LMPOS_BEST]);
 		ttoLNG = (t_lng - sv.MJD)*24.0 * 3600.0;
 		GET = (sv.MJD - CalcGETBase())*24.0*3600.0 + ttoLNG;
-		OrbMech::SStoHHMMSS(GET, hh, mm, ss);
+		OrbMech::SStoHHMMSS(GET, hh, mm, ss, 0.01);
 
 		sprintf(form->paddata, "REV 12 LS TCA: %d:%d:%.2lf", hh, mm, ss);
 	}
@@ -2102,7 +2102,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		int hh, mm;
 		double ss;
 
-		OrbMech::SStoHHMMSS(calcParams.LunarLiftoff, hh, mm, ss);
+		OrbMech::SStoHHMMSS(calcParams.LunarLiftoff, hh, mm, ss, 0.01);
 
 		sprintf(form->paddata, "P57 Liftoff time: %03d:%02d:%0.2lf", hh, mm, ss);
 
@@ -2447,7 +2447,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		AP11ManeuverPAD(&opt, *form);
 		sprintf(form->purpose, "SEP BURN");
 
-		OrbMech::SStoHHMMSS(form->GETI, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->GETI, hh, mm, ss, 0.01);
 		sprintf(form->remarks, "Jettison GET: %d:%d:%.2lf", hh, mm, ss);
 
 		form->GETI = calcParams.SEP;
@@ -2845,7 +2845,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 				sprintf(sign, "-");
 			}
 
-			OrbMech::SStoHHMMSS(abs(dt), hh, mm, ss);
+			OrbMech::SStoHHMMSS(abs(dt), hh, mm, ss, 0.01);
 
 			sprintf(upMessage, "Liftoff time update required\nAdjust GET by: %s%03d:%02d:%0.2lf", sign, hh, mm, ss);
 		}
@@ -2890,7 +2890,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 				sprintf(sign, "-");
 			}
 
-			OrbMech::SStoHHMMSS(abs(dt), hh, mm, ss);
+			OrbMech::SStoHHMMSS(abs(dt), hh, mm, ss, 0.01);
 
 			sprintf(upMessage, "Liftoff time update required\nAdjust GET by: %s%03d:%02d:%0.2lf", sign, hh, mm, ss);
 		}
@@ -2927,7 +2927,7 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		int hh, mm;
 		double ss;
 
-		OrbMech::SStoHHMMSS(LaunchMJD*3600.0, hh, mm, ss);
+		OrbMech::SStoHHMMSS(LaunchMJD*3600.0, hh, mm, ss, 0.01);
 
 		sprintf_s(Buff, "P10,CSM,%d:%d:%.2lf;", hh, mm, ss);
 		GMGMED(Buff);
