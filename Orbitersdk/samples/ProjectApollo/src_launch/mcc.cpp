@@ -2581,38 +2581,6 @@ void MCC::LoadState(FILEHANDLE scn) {
 	return;
 }
 
-// PAD Utility: Format time.
-void format_time(char *buf, double time) {
-	buf[0] = 0; // Clobber
-	int hours, minutes, seconds;
-	if (time < 0) { return;  } // don't do that
-	hours = (int)(time / 3600);
-	minutes = (int)((time / 60) - (hours * 60));
-	seconds = (int)((time - (hours * 3600)) - (minutes * 60));
-	sprintf(buf, "%03d:%02d:%02d", hours, minutes, seconds);
-}
-
-// PAD Utility: Format precise time.
-void format_time_prec(char *buf, double time) {
-	buf[0] = 0; // Clobber
-	int hours, minutes;
-	double seconds;
-	if (time < 0) { return; } // don't do that
-	hours = (int)(time / 3600);
-	minutes = (int)((time / 60) - (hours * 60));
-	seconds = ((time - (hours * 3600)) - (minutes * 60));
-	sprintf(buf, "HRS XXX%03d\nMIN XXXX%02d\nSEC XX%05.2f", hours, minutes, seconds);
-}
-
-void SStoHHMMSS(double time, int &hours, int &minutes, double &seconds)
-{
-	double mins;
-	hours = (int)trunc(time / 3600.0);
-	mins = fmod(time / 60.0, 60.0);
-	minutes = (int)trunc(mins);
-	seconds = (mins - minutes) * 60.0;
-}
-
 // Draw PAD display
 void MCC::drawPad(bool writetofile){
 	char buffer[1024];
@@ -2635,8 +2603,8 @@ void MCC::drawPad(bool writetofile){
 
 			for (int i = 0;i < 4;i++)
 			{
-				format_time(tmpbuf, form->GETI[i]);
-				format_time(tmpbuf2, form->GETI[i + 4]);
+				OrbMech::format_time(tmpbuf, form->GETI[i]);
+				OrbMech::format_time(tmpbuf2, form->GETI[i + 4]);
 				length += sprintf(buffer + length, "\nXX%s XX%s AREA\nXXX%+05.1f XXX%+05.1f LAT\nXX%+06.1f XX%+06.1f LONG\n%s %s GETI\nXXX%4.1f XXX%4.1f DVC\n%s %s WX", form->Area[i], form->Area[i + 4], form->Lat[i], form->Lat[i + 4], form->Lng[i], form->Lng[i + 4], tmpbuf, tmpbuf2, form->dVC[i], form->dVC[i + 4], form->Wx[i], form->Wx[i + 4]);
 			}
 			oapiAnnotationSetText(NHpad, buffer);
@@ -2645,13 +2613,13 @@ void MCC::drawPad(bool writetofile){
 	case PT_P27PAD:
 		{
 			P27PAD * form = (P27PAD *)padForm;
-			format_time(tmpbuf, form->GET[0]);
+			OrbMech::format_time(tmpbuf, form->GET[0]);
 			sprintf(buffer, "P27 UPDATE\nPURP V%d\nGET %s\n304 01 INDEX %d\n", form->Verb[0], tmpbuf, form->Index[0]);
 			for (int i = 0;i < 16;i++)
 			{
 				sprintf(buffer, "%s %02o %05d\n", buffer,i+2, form->Data[0][i]);
 			}
-			format_time_prec(tmpbuf, form->NavChk);
+			OrbMech::format_time_prec(tmpbuf, form->NavChk);
 			sprintf(buffer, "%sNAV CHECK (N34)\n%s\nLAT %+07.2f\nLONG %+07.2f\nALT %+07.1f\n", buffer, tmpbuf, form->lat, form->lng, form->alt);
 			oapiAnnotationSetText(NHpad, buffer);
 		}
@@ -2659,7 +2627,7 @@ void MCC::drawPad(bool writetofile){
 	case PT_AP7NAV:
 		{
 			AP7NAV * form = (AP7NAV *)padForm;
-			format_time_prec(tmpbuf, form->NavChk[0]);
+			OrbMech::format_time_prec(tmpbuf, form->NavChk[0]);
 			sprintf(buffer, "NAV CHECK\nGET (N34):\n%s\n %+07.2f LAT\n %+07.2f LNG\n %+07.1f ALT\n", tmpbuf, form->lat[0], form->lng[0], form->alt[0]);
 			oapiAnnotationSetText(NHpad, buffer);
 		}
@@ -2682,7 +2650,7 @@ void MCC::drawPad(bool writetofile){
 				fullString = "MANEUVER\n";
 			}
 
-			SStoHHMMSS(form->GETI, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->GETI, hh, mm, ss, 0.01);
 			snprintf(tempString, 1024, "%s PURPOSE\n%+06d HRS GETI N33\n%+06d MIN\n%+07.2f SEC\n%+07.1f DVX\n%+07.1f DVY\n%+07.1f DVZ\n", form->purpose, hh, mm, ss, form->dV.x, form->dV.y, form->dV.z);
 			fullString.append(tempString);
 
@@ -2699,13 +2667,14 @@ void MCC::drawPad(bool writetofile){
 			snprintf(tempString, 1024, "%+07.1f DVC\n", form->Vc);
 			fullString.append(tempString);
 
-			SStoHHMMSS(form->burntime, hh, mm, ss);
 			if (MissionType == MTP_D)
 			{
+				OrbMech::SStoHHMMSS(form->burntime, hh, mm, ss, 0.1);
 				snprintf(tempString, 1024, "XX%d:%04.1f BT\n%+06.0f CSM WT\n%+07.2f PTRM\n%+07.2f YTRM\n", mm, ss, form->Weight, form->pTrim, form->yTrim);
 			}
 			else
 			{
+				OrbMech::SStoHHMMSS(form->burntime, hh, mm, ss);
 				snprintf(tempString, 1024, "%+06.0f WGT\n%+07.2f PTRM\n%+07.2f YTRM\nXXX%d:%02.0f BT (MIN:SEC)\n", form->Weight, form->pTrim, form->yTrim, mm, ss);
 			}
 			fullString.append(tempString);
@@ -2719,7 +2688,7 @@ void MCC::drawPad(bool writetofile){
 			}
 			else
 			{
-				SStoHHMMSS(form->NavChk, hh, mm, ss);
+				OrbMech::SStoHHMMSS(form->NavChk, hh, mm, ss, 0.01);
 				snprintf(tempString, 1024, "%+06d HRS\n%+06d MIN TLAT, LONG\n%+07.2f SEC\n%+07.2f LAT\n%+07.2f LONG\n%+07.1f ALT\n", hh, mm, ss, form->lat, form->lng, form->alt);
 			}
 			fullString.append(tempString);
@@ -2734,7 +2703,7 @@ void MCC::drawPad(bool writetofile){
 	case PT_AP7TPI:
 		{
 			AP7TPI * form = (AP7TPI *)padForm;
-			format_time_prec(tmpbuf, form->GETI);
+			OrbMech::format_time_prec(tmpbuf, form->GETI);
 			sprintf(buffer, "TERMINAL PHASE INITIATE\nGETI\n%s\n%+07.1f Vgx\n%+07.1f Vgy\n%+07.1f Vgz\n", tmpbuf, form->Vg.x, form->Vg.y, form->Vg.z);
 			if (form->Backup_dV.x > 0)
 			{
@@ -2781,36 +2750,36 @@ void MCC::drawPad(bool writetofile){
 			buffer3.append(buffer2);
 			sprintf_s(buffer2, "%+07.1f RTGO .05G\n%+06.0f VIO .05G\n", form->RTGO[0], form->VIO[0]);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->Ret05[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->Ret05[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RET .05G\n%+07.2f LAT\n%+07.2f LONG\n", mm, ss, form->Lat[0], form->Lng[0]);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->Ret2[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->Ret2[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RET .2G\n%+07.1lf DRE (55°) N66\n", mm, ss, form->DRE[0]);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->RetBBO[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->RetBBO[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RETBBO\n", mm, ss);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->RetEBO[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->RetEBO[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RETEBO\n", mm, ss);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->RetDrog[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->RetDrog[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RETDROG\n", mm, ss);
 			buffer3.append(buffer2);
 			sprintf_s(buffer2, "POSTBURN\nXXX%03.0f R400K\n%+07.1f RTGO .05G\n%+06.0f VIO .05G\n", form->PB_R400K[0], form->PB_RTGO[0], form->PB_VIO[0]);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->PB_Ret05[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PB_Ret05[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RET .05G\n", mm, ss);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->PB_Ret2[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PB_Ret2[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RET .2G\n%+07.1lf DRE +/-100nm N66\n", mm, ss, form->PB_DRE[0]);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->PB_RetBBO[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PB_RetBBO[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RETBBO\n", mm, ss);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->PB_RetEBO[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PB_RetEBO[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RETEBO\n", mm, ss);
 			buffer3.append(buffer2);
-			SStoHHMMSS(form->PB_RetDrog[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PB_RetDrog[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%0d:%02.0f RETDROG\n", mm, ss);
 			buffer3.append(buffer2);
 
@@ -2825,8 +2794,8 @@ void MCC::drawPad(bool writetofile){
 
 			for (int i = 0;i < 4;i++)
 			{
-				format_time(tmpbuf, form->GETI[i]);
-				format_time(tmpbuf2, form->GET400K[i]);
+				OrbMech::format_time(tmpbuf, form->GETI[i]);
+				OrbMech::format_time(tmpbuf2, form->GET400K[i]);
 				sprintf(buffer, "%s-------------------------\n%s GETI\nX%+04.0f DVT\nX%+5.1f LONG\n%s GET 400K\n", buffer, tmpbuf, form->dVT[i], form->lng[i], tmpbuf2);
 			}
 			oapiAnnotationSetText(NHpad, buffer);
@@ -2840,10 +2809,10 @@ void MCC::drawPad(bool writetofile){
 		double ss, ss2;
 
 		sprintf(buffer, "P30 MANEUVER");
-		SStoHHMMSS(form->GETI, hh, mm, ss);
-		SStoHHMMSS(form->burntime, hh2, mm2, ss2);
+		OrbMech::SStoHHMMSS(form->GETI, hh, mm, ss, 0.01);
+		OrbMech::SStoHHMMSS(form->burntime, hh2, mm2, ss2);
 
-		format_time(tmpbuf, form->GET05G);
+		OrbMech::format_time(tmpbuf, form->GET05G);
 
 		sprintf(buffer, "%s\n%s PURPOSE\n%s PROP/GUID\n%+05.0f WT N47\n%+07.2f PTRIM N48\n%+07.2f YTRIM\n%+06d HRS GETI\n%+06d MIN N33\n%+07.2f SEC\n%+07.1f DVX N81\n%+07.1f DVY\n%+07.1f DVZ\nXXX%03.0f R\nXXX%03.0f P\nXXX%03.0f Y\n",
 			buffer, form->purpose, form->PropGuid, form->Weight, form->pTrim, form->yTrim, hh, mm, ss, form->dV.x, form->dV.y, form->dV.z, form->Att.x, form->Att.y, form->Att.z);
@@ -2872,34 +2841,34 @@ void MCC::drawPad(bool writetofile){
 
 			buffer3 = "LUNAR ENTRY\n";
 
-			format_time(tmpbuf, form->GETHorCheck[0]);
+			OrbMech::format_time(tmpbuf, form->GETHorCheck[0]);
 			sprintf_s(buffer2, "%s AREA\nXXX%03.0f R 0.05G\nXXX%03.0f P 0.05G\nXXX%03.0f Y 0.05G\n%s GET HOR CHK\n", form->Area[0], form->Att05[0].x, form->Att05[0].y, form->Att05[0].z, tmpbuf);
 			buffer3.append(buffer2);
 
 			sprintf_s(buffer2, "XXX%03.0f P\n%+07.2f LAT N61\n%+07.2f LONG\nXXX%04.1f MAX G\n", form->PitchHorCheck[0], form->Lat[0], form->Lng[0], form->MaxG[0]);
 			buffer3.append(buffer2);
 
-			format_time(tmpbuf, form->RRT[0]);
+			OrbMech::format_time(tmpbuf, form->RRT[0]);
 			sprintf_s(buffer2, "%+06.0f V400K N60\n%+07.2f y400K\n%+07.1f RTGO EMS\n%+06.0f VI0\n%s RRT\n", form->V400K[0], form->Gamma400K[0], form->RTGO[0], form->VIO[0], tmpbuf);
 			buffer3.append(buffer2);
 
-			SStoHHMMSS(form->RET05[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->RET05[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%02d:%02.0f RET 0.05G\nXXX%04.2f DO\n", mm, ss, form->DO[0]);
 			buffer3.append(buffer2);
 
-			SStoHHMMSS(form->RETVCirc[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->RETVCirc[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%02d:%02.0f RET V CIRC\n", mm, ss);
 			buffer3.append(buffer2);
 
-			SStoHHMMSS(form->RETBBO[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->RETBBO[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%02d:%02.0f RETBBO\n", mm, ss);
 			buffer3.append(buffer2);
 
-			SStoHHMMSS(form->RETEBO[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->RETEBO[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%02d:%02.0f RETEBO\n", mm, ss);
 			buffer3.append(buffer2);
 
-			SStoHHMMSS(form->RETDRO[0], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->RETDRO[0], hh, mm, ss);
 			sprintf_s(buffer2, "XX%02d:%02.0f RETDRO\n", mm, ss);
 			buffer3.append(buffer2);
 
@@ -2923,8 +2892,8 @@ void MCC::drawPad(bool writetofile){
 			double ss;
 
 			buffer3 = "TLI\n";
-			format_time(tmpbuf, form->TB6P);
-			SStoHHMMSS(form->BurnTime, hh, mm, ss);
+			OrbMech::format_time(tmpbuf, form->TB6P);
+			OrbMech::SStoHHMMSS(form->BurnTime, hh, mm, ss);
 
 			sprintf_s(buffer2, "%s TB6p\nXXX%03.0f R\nXXX%03.0f P TLI\nXXX%03.0f Y\nXXX%d:%02.0f BT\n%07.1f DVC\n%+05.0f VI\nXXX%03.0f R\nXXX%03.0f P SEP\nXXX%03.0f Y\n", tmpbuf, form->IgnATT.x, form->IgnATT.y, form->IgnATT.z, mm, ss, form->dVC, form->VI, form->SepATT.x, form->SepATT.y, form->SepATT.z);
 			buffer3.append(buffer2);
@@ -2950,8 +2919,8 @@ void MCC::drawPad(bool writetofile){
 		double ss, ss2;
 
 		sprintf(buffer, "CSM STAR CHECK UPDATE");
-		SStoHHMMSS(form->GET[0], hh, mm, ss);
-		SStoHHMMSS(form->TAlign[0], hh2, mm2, ss2);
+		OrbMech::SStoHHMMSS(form->GET[0], hh, mm, ss, 0.01);
+		OrbMech::SStoHHMMSS(form->TAlign[0], hh2, mm2, ss2, 0.01);
 
 		sprintf(buffer, "%s\nXX%03d HR GET\nXXX%02d MIN SR\nX%05.2f SEC\n%+06.1f R FDAI\n%+06.1f P\n%+06.1f Y\nXX%03d HR T ALIGN\nXXX%02d MIN\nX%05.2f SEC\n", buffer, hh, mm, ss, form->Att[0].x, form->Att[0].y, form->Att[0].z, hh2, mm2, ss2);
 
@@ -2966,50 +2935,50 @@ void MCC::drawPad(bool writetofile){
 		double ss;
 
 		sprintf(buffer, "MAP UPDATE REV %d\n", form->Rev);
-		SStoHHMMSS(form->LOSGET, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->LOSGET, hh, mm, ss);
 		sprintf(buffer, "%sLOS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
 		if (form->type == 0)
 		{
-			SStoHHMMSS(form->PMGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PMGET, hh, mm, ss);
 			sprintf(buffer, "%sPM: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->AOSGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->AOSGET, hh, mm, ss);
 			sprintf(buffer, "%sAOS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
 		}
 		else if (form->type == 1)
 		{
-			SStoHHMMSS(form->SRGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->SRGET, hh, mm, ss);
 			sprintf(buffer, "%sSR: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->PMGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PMGET, hh, mm, ss);
 			sprintf(buffer, "%sPM: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->AOSGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->AOSGET, hh, mm, ss);
 			sprintf(buffer, "%sAOS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->SSGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->SSGET, hh, mm, ss);
 			sprintf(buffer, "%sSS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
 		}
 		else if (form->type == 2)
 		{
-			SStoHHMMSS(form->PMGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PMGET, hh, mm, ss);
 			sprintf(buffer, "%sAOS WITH LOI1: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->AOSGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->AOSGET, hh, mm, ss);
 			sprintf(buffer, "%sAOS W/O LOI1: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
 		}
 		else if (form->type == 3)
 		{
-			SStoHHMMSS(form->PMGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PMGET, hh, mm, ss);
 			sprintf(buffer, "%sPM: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->AOSGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->AOSGET, hh, mm, ss);
 			sprintf(buffer, "%sAOS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->SSGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->SSGET, hh, mm, ss);
 			sprintf(buffer, "%sSS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->LOSGET2, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->LOSGET2, hh, mm, ss);
 			sprintf(buffer, "%sLOS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->SRGET, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->SRGET, hh, mm, ss);
 			sprintf(buffer, "%sSR: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->PMGET2, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->PMGET2, hh, mm, ss);
 			sprintf(buffer, "%sPM: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->AOSGET2, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->AOSGET2, hh, mm, ss);
 			sprintf(buffer, "%sAOS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->SSGET2, hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->SSGET2, hh, mm, ss);
 			sprintf(buffer, "%sSS: %d:%02d:%02.0f\n", buffer, hh, mm, ss);
 		}
 
@@ -3028,9 +2997,9 @@ void MCC::drawPad(bool writetofile){
 		for (int i = 0;i < form->entries;i++)
 		{
 			sprintf(buffer, "%sLMK ID %s\n", buffer, form->LmkID[i]);
-			SStoHHMMSS(form->T1[i], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->T1[i], hh, mm, ss);
 			sprintf(buffer, "%sT1 %03d:%02d:%02.f (HOR)\n", buffer, hh, mm, ss);
-			SStoHHMMSS(form->T2[i], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->T2[i], hh, mm, ss);
 			sprintf(buffer, "%sT2 %03d:%02d:%02.f (35°)\n", buffer, hh, mm, ss);
 
 			if (form->CRDist[i] > 0)
@@ -3073,7 +3042,7 @@ void MCC::drawPad(bool writetofile){
 			length += sprintf(buffer + length, "P30 LM MANEUVER\n");
 		}
 
-		SStoHHMMSS(form->GETI, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->GETI, hh, mm, ss, 0.01);
 
 		length += sprintf(buffer + length, "%s PURPOSE\n%+06d HRS N33\n%+06d MIN TIG\n%+07.2f SEC\n%+07.1f DVX ", form->purpose, hh, mm, ss, form->dV.x);
 
@@ -3097,7 +3066,7 @@ void MCC::drawPad(bool writetofile){
 
 		if (MissionType != MTP_D)
 		{
-			SStoHHMMSS(form->burntime, hh2, mm2, ss2);
+			OrbMech::SStoHHMMSS(form->burntime, hh2, mm2, ss2);
 			length += sprintf(buffer + length, "XXX%d:%02.0f BT\n", mm2, ss2);
 		}
 
@@ -3110,8 +3079,8 @@ void MCC::drawPad(bool writetofile){
 		}
 		else
 		{
-			SStoHHMMSS(form->t_CSI, hh, mm, ss);
-			SStoHHMMSS(form->t_TPI, hh2, mm2, ss2);
+			OrbMech::SStoHHMMSS(form->t_CSI, hh, mm, ss, 0.01);
+			OrbMech::SStoHHMMSS(form->t_TPI, hh2, mm2, ss2, 0.01);
 
 			length += sprintf(buffer + length, "%+06d HRS N11\n%+06d MIN CSI\n%+07.2f SEC\n%+06d HRS N37\n%+06d MIN TPI\n%+07.2f SEC\n", hh, mm, ss, hh2, mm2, ss2);
 		}
@@ -3128,8 +3097,8 @@ void MCC::drawPad(bool writetofile){
 		int hh, hh2, mm, mm2, length = 0;
 		double ss, ss2;
 
-		SStoHHMMSS(form->t_CSI, hh, mm, ss);
-		SStoHHMMSS(form->t_TPI, hh2, mm2, ss2);
+		OrbMech::SStoHHMMSS(form->t_CSI, hh, mm, ss, 0.01);
+		OrbMech::SStoHHMMSS(form->t_TPI, hh2, mm2, ss2, 0.01);
 
 		if (MissionType == MTP_D)
 		{
@@ -3168,7 +3137,7 @@ void MCC::drawPad(bool writetofile){
 		double ss;
 
 		sprintf(buffer, "LM AOT STAR OBSERVATION");
-		SStoHHMMSS(form->GET, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->GET, hh, mm, ss);
 
 		sprintf(buffer, "%s\n%03d HR\n%02d MIN\n%02.0f SEC\n%d AOT DETENT\n%02o NAV STAR\n%03.0f R\n%03.0f P\n%03.0f Y", buffer, hh, mm, ss, form->Detent, form->Star, form->CSMAtt.x, form->CSMAtt.y, form->CSMAtt.z);
 
@@ -3190,7 +3159,7 @@ void MCC::drawPad(bool writetofile){
 		int hh, mm;
 		double ss;
 
-		SStoHHMMSS(form->GETI, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->GETI, hh, mm, ss, 0.01);
 
 		sprintf(buffer, "TPI UPDATE (P34)\n%+06d HR N37\n%+06d MIN TIG\n%+07.2f SEC TPI\n%+07.1f DVX N81\n%+07.1f DVY LOCAL\n%+07.1f DVZ VERT\n%+07.1f DVR N42\n"
 			"XXX%03.0f RLM FDAI N18\nXXX%03.0f PLM INER\n%+07.2f R TPI N54\n%+07.1f RDOT TPI\n%+07.1f F/A (+/-) N59\n%+07.1f L/R (-/+) DV\n%+07.1f U/D (-/+) LOS", 
@@ -3205,7 +3174,7 @@ void MCC::drawPad(bool writetofile){
 		int hh, mm;
 		double ss;
 
-		SStoHHMMSS(form->GETI, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->GETI, hh, mm, ss, 0.01);
 
 		sprintf(buffer, "CDH UPDATE (P33)\n%+06d HR N31\n%+06d MIN TIG\n%+07.2f SEC CDH\n%+07.1f DVX N81\n%+07.1f DVY LOCAL\n%+07.1f DVZ VERT\n"
 			"XXX%03.0f PLM INER\n%+07.1f DVX N86\n%+07.1f DVZ AGS",
@@ -3224,10 +3193,10 @@ void MCC::drawPad(bool writetofile){
 
 		for (int i = 0;i < 2;i++)
 		{
-			SStoHHMMSS(form->GETStart[2 * i], hh[2 * i], mm[2 * i], ss[2 * i]);
-			SStoHHMMSS(form->GETStart[2 * i + 1], hh[2 * i + 1], mm[2 * i + 1], ss[2 * i + 1]);
-			SStoHHMMSS(form->TAlign[2 * i], hh2[2 * i], mm2[2 * i], ss2[2 * i]);
-			SStoHHMMSS(form->TAlign[2 * i + 1], hh2[2 * i + 1], mm2[2 * i + 1], ss2[2 * i + 1]);
+			OrbMech::SStoHHMMSS(form->GETStart[2 * i], hh[2 * i], mm[2 * i], ss[2 * i]);
+			OrbMech::SStoHHMMSS(form->GETStart[2 * i + 1], hh[2 * i + 1], mm[2 * i + 1], ss[2 * i + 1]);
+			OrbMech::SStoHHMMSS(form->TAlign[2 * i], hh2[2 * i], mm2[2 * i], ss2[2 * i]);
+			OrbMech::SStoHHMMSS(form->TAlign[2 * i + 1], hh2[2 * i + 1], mm2[2 * i + 1], ss2[2 * i + 1]);
 
 			sprintf(buffer, "%s\n%s %s SITE (OR AREA)\n%06.2f %06.2f R FDAI\n%06.2f %06.2f P\n%06.2f %06.2f Y\nXX%03d XX%03d GET START\n"
 				"XXX%02d XXX%02d MIN (5 MIN PRIOR TO)\nXXX%02.0f XXX%02.0f SEC (FIRST EXPOSURE)\nXX%03d XX%03d T ALIGN\nXXX%02d XXX%02d MIN (IF REQ)\n"
@@ -3257,7 +3226,7 @@ void MCC::drawPad(bool writetofile){
 		int hh, mm;
 		double ss;
 
-		SStoHHMMSS(form->KFactor, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->KFactor, hh, mm, ss, 0.01);
 
 		sprintf(buffer, "AGS ACTIVATION\n%d:%02d:%05.2f GET\n224 %+06d\n225 %+06d\n226 %+06d\n227 %+06d", hh, mm, ss, form->DEDA224, form->DEDA225, form->DEDA226, form->DEDA227);
 
@@ -3271,8 +3240,8 @@ void MCC::drawPad(bool writetofile){
 		int hh[2], mm[2];
 		double ss[2];
 
-		SStoHHMMSS(form->GETI, hh[0], mm[0], ss[0]);
-		SStoHHMMSS(form->t_go, hh[1], mm[1], ss[1]);
+		OrbMech::SStoHHMMSS(form->GETI, hh[0], mm[0], ss[0], 0.01);
+		OrbMech::SStoHHMMSS(form->t_go, hh[1], mm[1], ss[1], 0.01);
 
 		sprintf(buffer, "PDI PAD\n%+06d HRS TIG\n%+06d MIN PDI\n%+07.2f SEC\nXX%02d:%02.0f TGO N61\n%+07.1f CROSSRANGE\nXXX%03.0f R FDAI\nXXX%03.0f P AT TIG\n"
 			"XXX%03.0f Y\n%+06.0f DEDA 231 IF RQD", hh[0], mm[0], ss[0], mm[1], ss[1], form->CR, form->Att.x, form->Att.y, form->Att.z, form->DEDA231);
@@ -3287,9 +3256,9 @@ void MCC::drawPad(bool writetofile){
 		int hh[3], mm[3];
 		double ss[3];
 
-		SStoHHMMSS(form->T_TPI_Pre10Min, hh[0], mm[0], ss[0]);
-		SStoHHMMSS(form->T_Phasing, hh[1], mm[1], ss[1]);
-		SStoHHMMSS(form->T_TPI_Post10Min, hh[2], mm[2], ss[2]);
+		OrbMech::SStoHHMMSS(form->T_TPI_Pre10Min, hh[0], mm[0], ss[0], 0.01);
+		OrbMech::SStoHHMMSS(form->T_Phasing, hh[1], mm[1], ss[1], 0.01);
+		OrbMech::SStoHHMMSS(form->T_TPI_Post10Min, hh[2], mm[2], ss[2], 0.01);
 
 		if (form->type == 0)
 		{
@@ -3312,15 +3281,15 @@ void MCC::drawPad(bool writetofile){
 		int hh[9], mm[9];
 		double ss[9];
 
-		SStoHHMMSS(form->T2_TIG, hh[0], mm[0], ss[0]);
-		SStoHHMMSS(form->T2_t_Phasing, hh[1], mm[1], ss[1]);
-		SStoHHMMSS(form->T2_t_CSI1, hh[2], mm[2], ss[2]);
-		SStoHHMMSS(form->T2_t_TPI, hh[3], mm[3], ss[3]);
-		SStoHHMMSS(form->T3_TIG, hh[4], mm[4], ss[4]);
-		SStoHHMMSS(form->T3_t_Period, hh[5], mm[5], ss[5]);
-		SStoHHMMSS(form->T3_t_PPlusDT, hh[6], mm[6], ss[6]);
-		SStoHHMMSS(form->T3_t_CSI, hh[7], mm[7], ss[7]);
-		SStoHHMMSS(form->T3_t_TPI, hh[8], mm[8], ss[8]);
+		OrbMech::SStoHHMMSS(form->T2_TIG, hh[0], mm[0], ss[0], 0.01);
+		OrbMech::SStoHHMMSS(form->T2_t_Phasing, hh[1], mm[1], ss[1], 0.01);
+		OrbMech::SStoHHMMSS(form->T2_t_CSI1, hh[2], mm[2], ss[2], 0.01);
+		OrbMech::SStoHHMMSS(form->T2_t_TPI, hh[3], mm[3], ss[3], 0.01);
+		OrbMech::SStoHHMMSS(form->T3_TIG, hh[4], mm[4], ss[4], 0.01);
+		OrbMech::SStoHHMMSS(form->T3_t_Period, hh[5], mm[5], ss[5], 0.01);
+		OrbMech::SStoHHMMSS(form->T3_t_PPlusDT, hh[6], mm[6], ss[6], 0.01);
+		OrbMech::SStoHHMMSS(form->T3_t_CSI, hh[7], mm[7], ss[7], 0.01);
+		OrbMech::SStoHHMMSS(form->T3_t_TPI, hh[8], mm[8], ss[8], 0.01);
 
 		sprintf(buffer, "T2 ABORT\n%+06d HRS T2\n%+06d MIN TIG\n%+07.2f SEC\n%+06d HRS N33\n%+06d MIN PHASING\n%+07.2f SEC TIG\n"
 			"%+06d HRS N11\n%+06d MIN CSI1\n%+07.2f SEC\n%+06d HRS N37\n%+06d MIN TPI\n%+07.2f SEC\n"
@@ -3343,7 +3312,7 @@ void MCC::drawPad(bool writetofile){
 
 		for (int i = 0;i < form->entries;i++)
 		{
-			SStoHHMMSS(form->TIG[i], hh, mm, ss);
+			OrbMech::SStoHHMMSS(form->TIG[i], hh, mm, ss, 0.01);
 
 			sprintf(buffer, "%s%s PURPOSE\n%+06d HRS N33\n%+06d MIN TIG\n%+07.2f SEC\n%+07.1f DVX N84\n%+07.1f DVY\n%+07.1f DVZ\n", 
 				buffer, form->purpose[i], hh, mm, ss, form->DV[i].x, form->DV[i].y, form->DV[i].z);
@@ -3359,7 +3328,7 @@ void MCC::drawPad(bool writetofile){
 		int hh, mm;
 		double ss;
 
-		SStoHHMMSS(form->TIG, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->TIG, hh, mm, ss, 0.01);
 
 		sprintf(buffer, "LM ASCENT PAD\n%+06d HRS\n%+06d MIN TIG\n%+07.2f SEC\n%+07.1f V (HOR)\n%+07.1f V (VERT) N76\n%+07.1f CROSSRANGE\n"
 			"%+06d DEDA 047\n%+06d DEDA 053\n%+06.0f DEDA 225/226\n%+06.0f DEDA 231\nRemarks: %s", hh, mm, ss, form->V_hor, form->V_vert, form->CR,
@@ -3376,7 +3345,7 @@ void MCC::drawPad(bool writetofile){
 
 		for (int i = 0;i < form->entries;i++)
 		{
-			format_time(tmpbuf, form->TIG[i]);
+			OrbMech::format_time(tmpbuf, form->TIG[i]);
 			sprintf(buffer, "%sT%d %s\n", buffer, form->startdigit + i, tmpbuf);
 		}
 
@@ -3400,8 +3369,8 @@ void MCC::drawPad(bool writetofile){
 		int hh1, hh2, mm1, mm2;
 		double ss1, ss2;
 
-		SStoHHMMSS(form->GET_Day, hh1, mm1, ss1);
-		SStoHHMMSS(form->GET_Night, hh2, mm2, ss2);
+		OrbMech::SStoHHMMSS(form->GET_Day, hh1, mm1, ss1, 0.01);
+		OrbMech::SStoHHMMSS(form->GET_Night, hh2, mm2, ss2, 0.01);
 
 		sprintf_s(buffer, "RETRO ORIENTATION\nMODE A: DAY\nHRS %05d\nMIN %05d\nSEC %06.2f\nR %06.2lf\nP %06.2lf\nY %06.2lf\nMODE B: NIGHT\nHRS %05d\nMIN %05d\nSEC %06.2f\nR %06.2lf\nP %06.2lf\nY %06.2lf",
 			hh1, mm1, ss1, form->RetroAtt_Day.x, form->RetroAtt_Day.y, form->RetroAtt_Day.z, hh2, mm2, ss2, form->RetroAtt_Night.x, form->RetroAtt_Night.y, form->RetroAtt_Night.z);
@@ -3416,8 +3385,8 @@ void MCC::drawPad(bool writetofile){
 		int hh[2], mm[2];
 		double ss[2];
 
-		SStoHHMMSS(form->T_TPI_Pre10Min, hh[0], mm[0], ss[0]);
-		SStoHHMMSS(form->T_TPI_Post10Min, hh[1], mm[1], ss[1]);
+		OrbMech::SStoHHMMSS(form->T_TPI_Pre10Min, hh[0], mm[0], ss[0], 0.01);
+		OrbMech::SStoHHMMSS(form->T_TPI_Post10Min, hh[1], mm[1], ss[1], 0.01);
 
 		sprintf(buffer, "PDI ABORT <10 MIN\n%+06d HRS N37\n%+06d MIN TPI\n%+07.2f SEC\nPDI ABORT >10 MIN\n%+06d HRS N37\n%+06d MIN TPI\n%+07.2f SEC", hh[0], mm[0], ss[0], hh[1], mm[1], ss[1]);
 
@@ -3431,9 +3400,9 @@ void MCC::drawPad(bool writetofile){
 		int hh[3], mm[3];
 		double ss[3];
 
-		SStoHHMMSS(form->T2_TIG, hh[0], mm[0], ss[0]);
-		SStoHHMMSS(form->T2_t_TPI, hh[1], mm[1], ss[1]);
-		SStoHHMMSS(form->T3_TIG, hh[2], mm[2], ss[2]);
+		OrbMech::SStoHHMMSS(form->T2_TIG, hh[0], mm[0], ss[0], 0.01);
+		OrbMech::SStoHHMMSS(form->T2_t_TPI, hh[1], mm[1], ss[1], 0.01);
+		OrbMech::SStoHHMMSS(form->T3_TIG, hh[2], mm[2], ss[2], 0.01);
 
 		sprintf(buffer, "T2 ABORT\n%+06d HRS T2\n%+06d MIN TIG\n%+07.2f SEC\n%+06d HRS N37\n%+06d MIN TPI\n%+07.2f SEC\nT3 ABORT\n%+06d HRS T3\n%+06d MIN TIG\n%+07.2f SEC",
 			hh[0], mm[0], ss[0], hh[1], mm[1], ss[1], hh[2], mm[2], ss[2]);
@@ -3448,7 +3417,7 @@ void MCC::drawPad(bool writetofile){
 		int hh, mm;
 		double ss;
 
-		SStoHHMMSS(form->P22_ACQ_GET, hh, mm, ss);
+		OrbMech::SStoHHMMSS(form->P22_ACQ_GET, hh, mm, ss, 0.01);
 
 		sprintf(buffer, "P22 ACQUISITION\n%+06d HRS\n%+06d MIN\n%+07.2f SEC", hh, mm, ss);
 
@@ -3468,8 +3437,8 @@ void MCC::drawPad(bool writetofile){
 		int hh[2], mm[2];
 		double ss[2];
 
-		SStoHHMMSS(form->TIG, hh[0], mm[0], ss[0]);
-		SStoHHMMSS(form->TIG_2, hh[1], mm[1], ss[1]);
+		OrbMech::SStoHHMMSS(form->TIG, hh[0], mm[0], ss[0], 0.01);
+		OrbMech::SStoHHMMSS(form->TIG_2, hh[1], mm[1], ss[1], 0.01);
 
 		sprintf(buffer, "LM ASCENT PAD\n%+06d HRS\n%+06d MIN TIG\n%+07.2f SEC\n%+07.1f V (HOR)\n%+07.1f V (VERT) N76\n%+07.1f CROSSRANGE\n"
 			"%+06d 047\n%+06d 053\n%+06.0f 225/226\n%+06.0f 231\n%+07.1f 465\n%+06d HRS\n%+06d MIN TIG\n%+07.2f SEC\n%+06.0f LM WT\n%+06.0f CSM WT\nRemarks: %s",
@@ -3489,7 +3458,7 @@ void MCC::drawPad(bool writetofile){
 		OrbMech::SStoHHMMSS(form->t_Undock, hh[0], mm[0], ss[0]);
 		OrbMech::SStoHHMMSS(form->t_Separation, hh[1], mm[1], ss[1]);
 
-		sprintf(buffer, "Undocking: %d:%d:%.0lf\nAttitude: %03.0f %03.0f %03.0f\nSeparation: %d:%d:%.0lf", hh[0], mm[0], ss[0], form->Att_Undock.x, form->Att_Undock.y, form->Att_Undock.z, hh[1], mm[1], ss[1]);
+		sprintf(buffer, "Undocking: %d:%02d:%02.0lf\nAttitude: %03.0f %03.0f %03.0f\nSeparation: %d:%02d:%02.0lf", hh[0], mm[0], ss[0], form->Att_Undock.x, form->Att_Undock.y, form->Att_Undock.z, hh[1], mm[1], ss[1]);
 
 		oapiAnnotationSetText(NHpad, buffer);
 	}
