@@ -76,35 +76,35 @@ ProjectApolloMFDButtons::ProjectApolloMFDButtons()
 
 	static const MFDBUTTONMENU mnuIU[12] = {
 		{ "Back", 0, 'B' },
-		{ "Request Burn Data", 0, 'R' },
-		{ "Switch selector stage", 0, 'A' },
-		{ "Switch selector channel",0,'C' },
-		{ "Timebase update",0,'D' },
+		{ "Input data 1", 0, 'A' },
+		{ "Input data 2",0,'C' },
+		{ "Input data 3",0,'D' },
+		{ "Input data 4", 0, 'R' },
 		{ "Change Source",0,'S' },
 
 		{ "IU uplink type",0,'T' },
 		{ "Uplink to IU",0,'U' },
-		{ "Impact TIG",0,'I' },
-		{ "Impact burntime",0,'E' },
-		{ "Pitch angle",0,'P' },
-		{ "Yaw angle", 0, 'Y'}
+		{ "", 0,' ' },
+		{ "", 0,' ' },
+		{ "", 0,' ' },
+		{ "", 0, ' '}
 	};
 
 	page.IU = RegisterPage(mnuIU, sizeof(mnuIU) / sizeof(MFDBUTTONMENU));
 
 	RegisterFunction("BCK", OAPI_KEY_B, &ProjectApolloMFD::menuSetMainPage);
-	RegisterFunction("REQ", OAPI_KEY_R, &ProjectApolloMFD::menuVoid);
-	RegisterFunction("STA", OAPI_KEY_A, &ProjectApolloMFD::menuCycleSwitSelStage);
-	RegisterFunction("CHA", OAPI_KEY_C, &ProjectApolloMFD::menuSetSwitSelChannel);
-	RegisterFunction("TIM", OAPI_KEY_D, &ProjectApolloMFD::menuSetTBUpdateTime);
+	RegisterFunction("IN1", OAPI_KEY_A, &ProjectApolloMFD::menuSetIUUplinkInp1);
+	RegisterFunction("IN2", OAPI_KEY_C, &ProjectApolloMFD::menuSetIUUplinkInp2);
+	RegisterFunction("IN3", OAPI_KEY_D, &ProjectApolloMFD::menuSetIUUplinkInp3);
+	RegisterFunction("IN4", OAPI_KEY_R, &ProjectApolloMFD::menuSetIUUplinkInp4);
 	RegisterFunction("SRC", OAPI_KEY_S, &ProjectApolloMFD::menuSetIUSource);
 
 	RegisterFunction("TYP", OAPI_KEY_T, &ProjectApolloMFD::menuCycleIUUplinkType);
 	RegisterFunction("UPL", OAPI_KEY_U, &ProjectApolloMFD::menuIUUplink);
-	RegisterFunction("TIG", OAPI_KEY_I, &ProjectApolloMFD::menuSetImpactTIG);
-	RegisterFunction("BT", OAPI_KEY_E, &ProjectApolloMFD::menuSetImpactBT);
-	RegisterFunction("PIT", OAPI_KEY_P, &ProjectApolloMFD::menuSetImpactPitch);
-	RegisterFunction("YAW", OAPI_KEY_Y, &ProjectApolloMFD::menuSetImpactYaw);
+	RegisterFunction("", OAPI_KEY_I, &ProjectApolloMFD::menuVoid);
+	RegisterFunction("", OAPI_KEY_E, &ProjectApolloMFD::menuVoid);
+	RegisterFunction("", OAPI_KEY_P, &ProjectApolloMFD::menuVoid);
+	RegisterFunction("", OAPI_KEY_Y, &ProjectApolloMFD::menuVoid);
 
 	static const MFDBUTTONMENU mnuTELE[11] = {
 		{ "Back", 0, 'B' },
@@ -171,8 +171,8 @@ ProjectApolloMFDButtons::ProjectApolloMFDButtons()
 		{ "Back", 0, 'B' },
 		{ "Press ENTR on DSKY and DEDA",0,'D' },
 		{ "Press ENTR on DSKY in CSM and LM",0,'E' },
-		{ "Calculate V42 Angles", 0, 'F' },
-		{ 0,0,0 },
+		{ "Press PRO on DSKY in CSM and LM", 0, 'F' },
+		{ "Calculate V42 Angles", 0, 'G' },
 		{ "CSM and LM REFSMMAT types",0,'R' }
 	};
 
@@ -181,7 +181,8 @@ ProjectApolloMFDButtons::ProjectApolloMFDButtons()
 	RegisterFunction("BCK", OAPI_KEY_B, &ProjectApolloMFD::menuSetMainPage);
 	RegisterFunction("V47", OAPI_KEY_D, &ProjectApolloMFD::menuPressEnterOnDSKYDEDA);
 	RegisterFunction("ENT", OAPI_KEY_E, &ProjectApolloMFD::menuPressEnterOnCMCLGC);
-	RegisterFunction("V42", OAPI_KEY_F, &ProjectApolloMFD::CalculateV42Angles);
+	RegisterFunction("PRO", OAPI_KEY_F, &ProjectApolloMFD::menuPressPROOnCMCLGC);
+	RegisterFunction("V42", OAPI_KEY_G, &ProjectApolloMFD::CalculateV42Angles);
 	RegisterFunction("", OAPI_KEY_A, &ProjectApolloMFD::menuVoid);
 	RegisterFunction("REF", OAPI_KEY_R, &ProjectApolloMFD::menuCycleLMAlignType);
 

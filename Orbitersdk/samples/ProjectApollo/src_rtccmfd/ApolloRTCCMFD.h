@@ -150,6 +150,9 @@ public:
 	void set_RTEConstraintF86(std::string constr, double value);
 	void menuSetRTEConstraintF87();
 	void set_RTEConstraintF87(std::string constr, std::string value);
+	void menuAddRTESite();
+	void menuReplaceRTESite();
+	void menuDeleteRTESite();
 	void CycleRTECalcMode();
 	void menuSetRTEManeuverCode();
 	void set_RTEManeuverCode(char *code);
@@ -276,6 +279,7 @@ public:
 	void menuSetLmkTime();
 	void menuSetLmkLat();
 	void menuSetLmkLng();
+	void menuLmkUseLandingSite();
 	void menuLmkPADCalc();
 	void menuSetTargetingMenu();
 	void menuSetPADMenu();
@@ -559,7 +563,6 @@ public:
 	bool set_ChooseMPTDirectInputThruster(std::string th);
 	void menuMPTDirectInputTransfer();
 	void menuMPTDirectInputTIG();
-	void set_MPTDirectInputTIG(double tig);
 	void menuMPTDirectInputDock();
 	void menuMPTDirectInputFinalConfig();
 	void set_MPTDirectInputFinalConfig(char *cfg);

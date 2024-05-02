@@ -167,7 +167,7 @@ public:
 
 	void DrawSwitchVC(int id, int event, SURFHANDLE surf);
 	void SetDirection(const VECTOR3 &xvec, const VECTOR3 &yvec);
-	void DefineVCAnimations(UINT vc_idx);
+	void DefineVCAnimations(UINT vc_idx, bool left);
 	void DefineMeshGroup(UINT _grpX, UINT _grpY);
 
 	bool IsPowered();
@@ -184,7 +184,7 @@ protected:
 	UINT grpX, grpY;
 
 	VECTOR3 xvector, yvector;
-	MGROUP_TRANSLATE *xtrans, *ytrans;
+	MGROUP_ROTATE *xtrans, *ytrans;
 };
 
 #define CROSSPOINTER_LEFT_START_STRING "CROSSPOINTER_LEFT_START"
@@ -480,6 +480,7 @@ public:
 	void SetTrackLight();
 	void SetDockingLights();
 	void SetCOAS();
+	void SetWindowShades();
 	double GetMissionTime() { return MissionTime; }; // This must be here for the MFD can't use it.
 	int GetApolloNo() { return ApolloNo; }
 	UINT GetStage() { return stage; }
@@ -542,6 +543,12 @@ public:
 	virtual void StartEVA();
 	void StartSeparationPyros();
 	void StopSeparationPyros();
+
+	//
+	// VISHANDLE
+	//
+
+	VISHANDLE vis;
 
 	h_Tank *DesO2Tank;
 	h_Tank *AscO2Tank1;
@@ -700,7 +707,7 @@ protected:
 	void DefineVCAnimations();
 	void DoFirstTimestep();
 	void LoadDefaultSounds();
-	void RCSSoundTimestep();
+	void EngineSoundTimestep();
 	// void GetDockStatus();
 	void JostleViewpoint(double amount);
 	void VCFreeCam(VECTOR3 dir, bool slow);
@@ -709,6 +716,13 @@ protected:
 	void SetContactLight(int m, bool state);
 	void SetPowerFailureLight(int m, bool state);
 	void SetStageSeqRelayLight(int m, bool state);
+
+#ifdef _OPENORBITER
+	void SetLMVCIntegralLight(UINT meshidx, DWORD *matList, MatProp EmissionMode, double state, int cnt);
+#else
+	void SetLMVCIntegralLight(UINT meshidx, DWORD *matList, int EmissionMode, double state, int cnt);
+#endif
+
 	void InitFDAI(UINT mesh);
 
 	// LM touchdown points
@@ -982,7 +996,7 @@ protected:
 	ThreePosSwitch FloodSwitch;
 
 	SwitchRow FloodRotaryRow;
-	RotationalSwitch FloodRotary;
+	ContinuousRotationalSwitch FloodRotary;
 
 	SwitchRow LampToneTestRotaryRow;
 	RotationalSwitch LampToneTestRotary;
@@ -1044,7 +1058,7 @@ protected:
 	DSKYPushSwitch DskySwitchEight;
 	DSKYPushSwitch DskySwitchNine;
 	DSKYPushSwitch DskySwitchClear;
-	DSKYPushSwitch DskySwitchProg;
+	DSKYPushSwitch DskySwitchProceed;
 	DSKYPushSwitch DskySwitchKeyRel;
 	DSKYPushSwitch DskySwitchEnter;
 	DSKYPushSwitch DskySwitchReset;
@@ -1192,9 +1206,9 @@ protected:
 	ToggleSwitch LtgORideNumSwitch;
 	ToggleSwitch LtgORideIntegralSwitch;
 	ToggleSwitch LtgSidePanelsSwitch;
-	RotationalSwitch LtgFloodOhdFwdKnob;
-	RotationalSwitch LtgAnunNumKnob;
-	RotationalSwitch LtgIntegralKnob;
+	ContinuousRotationalSwitch LtgFloodOhdFwdKnob;
+	ContinuousRotationalSwitch LtgAnunNumKnob;
+	ContinuousRotationalSwitch LtgIntegralKnob;
 	PushSwitch PlusXTranslationButton;
 	EngineStartButton ManualEngineStart;
 	EngineStopButton CDRManualEngineStop;
@@ -1343,10 +1357,10 @@ protected:
 	RotationalSwitch Panel12SBandAntSelKnob;
 	
 	SwitchRow Panel12AntPitchSwitchRow;
-	RotationalSwitch Panel12AntPitchKnob;
+	ContinuousRotationalSwitch Panel12AntPitchKnob;
 
 	SwitchRow Panel12AntYawSwitchRow;
-	RotationalSwitch Panel12AntYawKnob;
+	ContinuousRotationalSwitch Panel12AntYawKnob;
 
 	SwitchRow LMPManualEngineStopSwitchRow;
 	EngineStopButton LMPManualEngineStop;
@@ -1525,6 +1539,12 @@ protected:
 	int LEMCoas1Enabled;
 	int LEMCoas2Enabled;
 
+	///////////////////////
+	// LEM Window Shades //
+	///////////////////////
+
+	int LEMWindowShades;
+
 	///////////////////////////
 	// ORDEAL Panel switches //
 	///////////////////////////
@@ -1568,8 +1588,6 @@ protected:
 #define VIEWANGLE 30
 
 	int	viewpos;
-	
-	bool SoundsLoaded;
 
 	bool Crewed;
 	bool AutoSlow;
@@ -1657,6 +1675,7 @@ protected:
 	UINT ascidx;
 	UINT dscidx;
 	UINT vcidx;
+	UINT windowshadesidx;
 	UINT xpointershadesidx;
 
 	DEVMESHHANDLE probes;
@@ -1772,6 +1791,7 @@ protected:
 	FadeInOutSound GlycolPumpSound;
 	FadeInOutSound SuitFanSound;
 	Sound CrewDeadSound;
+	Sound EngineS;
 
 	//
 	// Connectors.

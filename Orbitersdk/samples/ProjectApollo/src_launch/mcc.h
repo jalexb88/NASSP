@@ -286,6 +286,9 @@ public:
 	void SaveState(FILEHANDLE scn);							// Save state
 	void LoadState(FILEHANDLE scn);							// Load state
 
+	// FOR TIME DISPLAYS
+	virtual double GetMissionTime();
+
 	// MISSION SPECIFIC FUNCTIONS
 	void MissionSequence_B();
 	void MissionSequence_C();
