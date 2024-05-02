@@ -176,8 +176,9 @@ bool RTCC::CalculationMTP_JX(int fcn, LPVOID &pad, char * upString, char * upDes
 		GMGMED(Buff);
 
 		//Predict liftoff time and simulate launch
-		double LOpred = RTCCPresentTimeGMT() + abs(SatV->MissionTime);
-		OrbMech::SStoHHMMSS(LOpred, hh, mm, ss, 0.01);
+		double iptr, gmt;
+		gmt = modf(oapiGetSimMJD(), &iptr)*24.0*3600.0 + abs(SatV->MissionTime); //TBD: Not sure this is good
+		OrbMech::SStoHHMMSS(gmt, hh, mm, ss, 0.01);
 		sprintf_s(Buff, "P10,CSM,%d:%d:%.2lf,TRAJ;", hh, mm, ss);
 		GMGMED(Buff);
 
