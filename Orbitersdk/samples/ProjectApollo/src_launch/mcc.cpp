@@ -685,10 +685,14 @@ void MCC::TimeStep(double simdt){
 					MissionType = MTP_H3;
 					break;
 				case 15:
-					MissionType = MTP_J1;
+					//MissionType = MTP_J1;
+					MissionType = MTP_JX; //Temporarily use custom MCC for Apollo 15
+					setState(MST_JX_PRELAUNCH);
 					break;
 				case 16:
-					MissionType = MTP_J2;
+					//MissionType = MTP_J2;
+					MissionType = MTP_JX; //Temporarily use custom MCC for Apollo 16
+					setState(MST_JX_PRELAUNCH);
 					break;
 				case 17:
 					MissionType = MTP_J3;
